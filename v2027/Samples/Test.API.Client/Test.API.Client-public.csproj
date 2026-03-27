@@ -15,8 +15,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="AD.API.ClientHost">
-      <HintPath>$(_ApiServerBinPath)AD.API.ClientHost.dll</HintPath>
+    <Reference Include="AD.API.Client">
+      <HintPath>$(_ApiServerBinPath)AD.API.Client.dll</HintPath>
     </Reference>
   </ItemGroup>
 
