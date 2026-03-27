@@ -1,7 +1,6 @@
 # Advance Design API
-# Advance Design API
 
-[**GRAITEC Advance Design**](https://www.graitec.com/advance-design/) is a professional structural analysis and design software for engineers, covering the full BIM workflow — from modelling and loading to finite-element analysis, code-based design checks and documentation.
+[**GRAITEC Advance Design**](https://www.graitec.com/advance-design/) is a professional structural analysis and design software for engineers, covering the full BIM workflow â€” from modelling and loading to finite-element analysis, code-based design checks and documentation.
 
 The **Advance Design API** exposes a REST/HTTP interface that allows external applications (add-ins, automation scripts, test harnesses) to drive Advance Design programmatically:
 
