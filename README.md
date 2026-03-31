@@ -23,4 +23,4 @@ The **Advance Design API** exposes a REST/HTTP interface that allows external ap
 ## License & Legal
 
 This repository is released under the [MIT License](LICENSE).  
-Please also read the [Legal Notice](Legal%20Notice) before using any materials from this repository.
+Please also read the [Legal Notice](LEGAL_NOTICE.md) before using any materials from this repository.
