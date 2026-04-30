@@ -1803,8 +1803,12 @@ foreach (var (dirChoice, sign) in new[]
         },
         Ductility = new DuctilityConfigEN1998
         {
-            DuctilityDetermination = DuctilityDeterminationEN1998_API.Auto,
-            DuctilityCoefficient   = 1.0
-        }
-    });
-}
+                    DuctilityDetermination = DuctilityDeterminationEN1998_API.Auto,
+                        DuctilityCoefficient   = 1.0
+                    }
+                });
+            }
+
+            ---
+
+            > 📝 **Note:** This document was generated with the assistance of AI.

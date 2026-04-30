@@ -17,3 +17,10 @@ The **Advance Design API** exposes a REST/HTTP interface that allows external ap
 | Version | Description | Link |
 |---|---|---|
 | **2027 BETA** | OpenAPI schema, documentation, C# samples and Python client | [v2027/README.md](v2027/README.md) |
+
+---
+
+## License & Legal
+
+This repository is released under the [MIT License](LICENSE).  
+Please also read the [Legal Notice](LEGAL_NOTICE.md) before using any materials from this repository.
