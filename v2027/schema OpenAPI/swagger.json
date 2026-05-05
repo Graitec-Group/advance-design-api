@@ -7026,6 +7026,15 @@
             "type": "boolean",
             "description": "Snow guards for 2D elements\r\n\r\nDefault value: false",
             "default": false
+          },
+          "climaticType": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Load_Area_Type"
+              }
+            ],
+            "description": "Climatic Type - what type of structure is considered for 2D climatic calculations\r\n\r\nDefault value : Load_Area_Type.CG_LOADAREA_BUILDING",
+            "default": "CG_LOADAREA_BUILDING"
           }
         },
         "additionalProperties": false,

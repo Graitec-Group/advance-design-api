@@ -69,6 +69,7 @@
 - **`ElementPlanar`** – slab, wall, shell
   - Types (`PlanarElementType`): `membrane`, `plate`, `shell`, `deformation_plane`, `steeldeck`, `layeredShell`, `slabonsteeldeck`, `planar_no_of_types`
   - Variable thickness (X/Y slope), eccentricity, detailed mesh
+  - **`Openings`** *(new)*: optional list of interior polygon holes (`ICollection<ICollection<Pt3D>>`). Only fully interior openings are accepted.
 
 ### 4.3 Punctual Supports
 | Type | Behavior |
@@ -142,7 +143,7 @@ Loads are created via `CreateElement` using the following types:
 **Wind IBC (`LoadCaseFamily_WindIBC`):**
 - Basic wind speed V, exposure category (B/C/D), risk category (I–IV)
 - Factors: Kzt, Kd, Ke, D_Gust, Ri
-- Design method: `GRCG_WIND_IBC_METHOD_ENVELOPPE_LOW_RISE_BUIILDING`, torsional load cases
+- Design method: `windDesign` integer (`0` = Chapter 28 Envelope Low-Rise Building, `1` = Scaffolding), torsional load cases
 - Auto-generation: wind walls, pressure coefficients, split wind walls, load generation
 
 **Snow IBC (`LoadCaseFamily_SnowIBC`):**
@@ -228,4 +229,4 @@ Loads are created via `CreateElement` using the following types:
 
 ---
 
-> 📝 **Note:** This document was generated with the assistance of AI.
+> 📝 **Note:** This document was generated with the assistance of AI. Last updated: 2026-05-05 (swagger.json OpenAPI 3.0.4 v1).

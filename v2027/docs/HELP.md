@@ -43,6 +43,15 @@
 
 ---
 
+> 📝 **Last updated:** 2026-05-05 (swagger.json OpenAPI 3.0.4 v1)
+
+> ⚠️ **Breaking changes since last release:**
+> - **`UserName` renamed to `UserID`** in `ElementBase` (and `InformationalElementBase`). Any serialized JSON using `"userName"` must be updated to `"userID"`.
+> - **`WindDesign_WindIBC_API` enum removed**: the `windDesign` field of `LoadCaseFamily_WindIBC` is now an `int` (`0` = Ch28 Envelope Low-Rise Building, `1` = Scaffolding).
+> - **`MaterialBase` removed**: `Material` is now the direct top-level base class for all material objects.
+
+---
+
 ## 1. Overview
 
 The **Advance Design API** exposes a REST/HTTP interface that allows external C# applications (add-ins, automation scripts, test harnesses) to:
@@ -445,7 +454,7 @@ Returns a list of element EIDs matching the provided query filters.
 | `QueryElementsModel` | `"QueryElementsModel"` | Filter by `ElementTypeEnum` |
 | `QueryElementsLoads` | `"QueryElementsLoads"` | Filter loads by `LoadCaseId` |
 | `QueryInfoModel` | `"QueryInfoModel"` | Filter informational elements by `InformationalElementTypeEnum` |
-| `QueryInfoLoadCase` | `"QueryInfoLoadCase"` | Filter load cases by parent family `CaseFamilyId` |
+| `QueryInfoLoadCase` | `"QueryInfoLoadCase"` | Returns all loads that belong to a specific load case (`CaseFamilyId`) |
 
 **Returns:** `Int64ListApiResponse`
 
@@ -581,7 +590,7 @@ EIDApiResponse r2 = client.CreateMaterial(new Material { Name = "Generic" });
 ```json
 {
   "$type": "ElementLinear",
-  "userName": 1,
+  "userID": 1,
   "geomPtStart": { "x": 0, "y": 0, "z": 0 },
   "geomPtEnd":   { "x": 5, "y": 0, "z": 0 },
   "section":  { "value": 1 },
@@ -595,7 +604,7 @@ EIDApiResponse r2 = client.CreateMaterial(new Material { Name = "Generic" });
 
 ## 6. Data Models — Materials
 
-All material classes inherit from `Material` (which inherits from `MaterialBase`).
+All material classes inherit from `Material` (the direct base class). `MaterialBase` was removed — `Material` is now the top-level base.
 
 ### `Material` (base)
 
@@ -676,7 +685,7 @@ All geometric elements inherit from `ElementBase`.
 
 | Property | Type | Required | Description |
 |---|---|---|---|
-| `UserName` | `int` | — | User-assigned integer label |
+| `UserID` | `int` | — | User-facing ID displayed in the UI for element identification. Differs from the internal EID — managed by the application; treat as read-only from the client side. |
 
 ### `ElementLinear`
 
@@ -708,6 +717,23 @@ Represents a 1D beam/column/truss element.
 | `Clipping` | `ClippingProperties` | — | Clipping planes (XY, XZ) |
 | `LoadAreaLoadTransferProperties` | `LinearLoadAreaLoadTransfer` | — | Load area transfer settings |
 
+### `LinearLoadAreaLoadTransfer`
+
+Controls how loads from wind walls, scaffolding, snow, and climatic surfaces are transferred to this linear element.
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `IsWindWallSupport` | `bool` | `true` | Acts as a wind wall load transfer support |
+| `IsScaffoldingSupport` | `bool` | `false` | Acts as a scaffolding load transfer support |
+| `ClimaticLE2D` | `bool` | `false` | Participates in 2D climatic (wind/snow) distribution |
+| `LoadSpanFront` | `double` | `2.5` | Tributary span on front side (m) |
+| `LoadSpanBehind` | `double` | `2.5` | Tributary span on back side (m) |
+| `ContinuityCoeff` | `double` | `1.0` | Continuity coefficient (1.0 = full continuity) |
+| `OpeningType` | `LoadArea_Opening_type` | `CG_WINDWALL_OPENING_TYPE_CLOSED_NO_OPENINGS` | Opening type for wind pressure calculations |
+| `OpeningsValue` | `double` | `0.0` | Total area or percentage of openings (m² or %) |
+| `SnowGuards2D` | `bool` | `false` | Snow guards present on this 2D element |
+| `ClimaticType` | `Load_Area_Type` | `CG_LOADAREA_BUILDING` | Climatic type for 2D wind/snow load distribution |
+
 ### `ElementPlanar`
 
 Represents a 2D slab/wall/plate element.
@@ -724,6 +750,7 @@ Represents a 2D slab/wall/plate element.
 | `SlopeY` | `double` | ✓ | Thickness slope Y |
 | `SupportingElement` | `bool` | ✓ | Acts as a support for other elements |
 | `MeshProperties` | `PlanarElementMeshProperties` | — | Mesh configuration |
+| `Openings` | `ICollection<ICollection<Pt3D>>` | — | List of interior openings (holes). Each opening is a closed polygon defined by 3D points in global coordinates. Only fully interior openings are accepted — edge openings will be rejected. |
 
 ### `ElementSinglePile`
 
@@ -1293,7 +1320,7 @@ In addition to `ResNodes`, these include resultant torsor components:
 | `Ke` | 1.0 | — | Ground elevation factor |
 | `DGust` | 0.85 | — | Gust effect factor |
 | `Ri` | 1.0 | — | Reduction factor |
-| `WindDesign` | 0 | — | Design method |
+| `WindDesign` | 0 | — | Wind design method: `0` = Chapter 28 Envelope Low-Rise Building; `1` = Scaffolding. The `WindDesign_WindIBC_API` enum was removed; use integer values directly. |
 | `TorsionalLoadCases` | `false` | — | Generate torsional cases |
 | `HeightOfStructureBase` | 0.0 | m | Height of base |
 
@@ -1834,7 +1861,7 @@ var elements = client.GetElementsObject(ids.ToList()).Data;
 foreach (var el in elements.OfType<ElementLinear>())
 {
     Console.WriteLine(
-        $"EID={el.UserName}  " +
+        $"EID={el.UserID}  " +
         $"from ({el.GeomPtStart.X:F2},{el.GeomPtStart.Y:F2},{el.GeomPtStart.Z:F2}) " +
         $"to   ({el.GeomPtEnd.X:F2},{el.GeomPtEnd.Y:F2},{el.GeomPtEnd.Z:F2})");
 }

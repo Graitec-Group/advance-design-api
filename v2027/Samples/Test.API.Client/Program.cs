@@ -48,6 +48,7 @@ namespace Test.API.Client
         ("Climatic: 3D building with wind (EN 1991-1-4) and snow (EN 1991-1-3) auto generation (France)", c => Sample_WindSnow3DBuildingAutoGeneration(c)),
         ("Climatic: Portal 2D Structure and IBC (ASCE 7-22) Climatic Generation",          c => Sample_Portal2DStructureAndCLimaticGeneration(c)),
         ("Climatic: Portal 2D Structure and IBC (ASCE 7-22) Climatic Generation (multiple roof elements)", c => Sample_Portal2DStructureAndCLimaticGeneration_wMultipleElementsInTheRoof(c)),
+        ("Climatic: Portal 2D with Protruding Roof / Overhangs and IBC (ASCE 7-22) Climatic Generation", c => Sample_Portal2DwithProtrudingRoofOrOverhangsandClimaticGeneration(c)),
 
         ("Intentional error testing: Structure with intentional material error",                           c => Sample_With_IntentionalMaterialError(c)),
         ("Properties setting and model management: Custom properties set and verification after reopen",                 c => Sample_CustomPropertiesVerificationOnReopen(c)),
