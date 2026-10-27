@@ -1,0 +1,16 @@
+{
+  "profiles": {
+    "Sample Runner (GUI)": {
+      "commandName": "Project",
+      "commandLineArgs": "--gui"
+    },
+    "Console menu": {
+      "commandName": "Project",
+      "commandLineArgs": "--console"
+    },
+    "Batch run - all samples": {
+      "commandName": "Project",
+      "commandLineArgs": "--run-all --report ad-api-samples.xml"
+    }
+  }
+}

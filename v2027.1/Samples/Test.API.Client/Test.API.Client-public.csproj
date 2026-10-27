@@ -1,0 +1,82 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    This project is meant to be shipped on its own, next to the sample sources, and to build
+    with nothing but the .NET SDK and the Advance Design binaries it references. It must never
+    depend on the DevAD solution, on a sibling project, or on a path that only exists inside the
+    repository - hence the "am I inside the repo?" probe below rather than fixed relative paths.
+  -->
+  <PropertyGroup>
+    <!-- Three levels up is the DevAD repository root when this project sits in
+         Applications\API\Test.API.Client, and an unrelated folder anywhere else. ServerX64 is
+         the marker: it exists in the repository and never in a shipped samples package. -->
+    <_ParentOfPackage>$([MSBuild]::NormalizeDirectory('$(MSBuildProjectDirectory)', '..', '..', '..'))</_ParentOfPackage>
+    <_InsideDevAdRepo Condition="Exists('$(_ParentOfPackage)ServerX64')">true</_InsideDevAdRepo>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!--
+      Where AD.API.Client.dll is looked up, in order of decreasing specificity:
+        1. AD_API_SERVER_BINARY_PATH, when the user points at a particular build;
+        2. the repository output, when this project is built from inside DevAD;
+        3. the Advance Design installation, which is where a customer's binaries live.
+      The last one mirrors the runtime fallback in AssemblyResolver.cs, so a machine with
+      Advance Design installed builds the samples without setting anything at all.
+    -->
+    <_ApiServerBinPath Condition="'$(AD_API_SERVER_BINARY_PATH)' != ''">$(AD_API_SERVER_BINARY_PATH)</_ApiServerBinPath>
+    <_ApiServerBinPath Condition="'$(_ApiServerBinPath)' == '' And '$(_InsideDevAdRepo)' == 'true'">$(_ParentOfPackage)ServerX64\bin\</_ApiServerBinPath>
+    <_ApiServerBinPath Condition="'$(_ApiServerBinPath)' == ''">$(ProgramFiles)\Graitec\Advance Design\2027\Bin\</_ApiServerBinPath>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows8.0</TargetFramework>
+    <!-- The file name contains a hyphen, which is not a valid namespace identifier. The WPF
+         markup compiler validates the default namespace, so it must be set explicitly. -->
+    <RootNamespace>Test.API.Client</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <!-- Inside the repository this project shares its folder with Test.API.Client.csproj, and
+         the WPF markup compiler writes MainWindow.g.cs / .baml without a project specific
+         prefix while baking the assembly name into the resource URIs. Building one variant
+         would leave the other one with generated code naming the wrong assembly. Only the
+         intermediate folder has to move: BaseIntermediateOutputPath stays "obj", so the SDK
+         keeps excluding the whole obj tree from its source globs. Standalone there is no
+         sibling, so the layout stays the ordinary one. -->
+    <IntermediateOutputPath Condition="'$(_InsideDevAdRepo)' == 'true'">obj\public\$(Configuration)\</IntermediateOutputPath>
+    <!-- Inside the repository the build joins the other API binaries, as it always did.
+         Standalone it stays in the package's own bin folder: writing three levels up would
+         drop the output into an unrelated directory of whoever unpacked the samples. -->
+    <OutputPath Condition="'$(_InsideDevAdRepo)' == 'true'">$(_ParentOfPackage)ServerX64\bin\</OutputPath>
+    <StartupObject>Test.API.Client.Program</StartupObject>
+  </PropertyGroup>
+
+  <!--
+    Optional sample runner (window, batch run, command line). Its sources live in the sibling
+    Test.API.Client.SampleRunner folder, which the public samples package does not ship: when it
+    is absent this project is the console application it has always been, and nothing here has
+    to change. Set IncludeSampleRunner=false to build the console-only shape even with the
+    folder present.
+  -->
+  <PropertyGroup>
+    <IncludeSampleRunner Condition="'$(IncludeSampleRunner)' == ''">true</IncludeSampleRunner>
+    <_SampleRunnerProps>$([MSBuild]::NormalizeDirectory('$(MSBuildProjectDirectory)', '..', 'Test.API.Client.SampleRunner'))Test.API.Client.SampleRunner.props</_SampleRunnerProps>
+  </PropertyGroup>
+
+  <Import Project="$(_SampleRunnerProps)" Condition="'$(IncludeSampleRunner)' == 'true' And Exists('$(_SampleRunnerProps)')" />
+
+  <ItemGroup>
+    <Reference Include="AD.API.Client">
+      <HintPath>$(_ApiServerBinPath)AD.API.Client.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="_WarnWhenApiServerBinariesAreMissing" BeforeTargets="ResolveAssemblyReferences">
+    <!-- Without this the build fails with a wall of CS0246 "type or namespace not found" and
+         nothing pointing at the real cause. -->
+    <Warning Condition="!Exists('$(_ApiServerBinPath)AD.API.Client.dll')"
+             Text="AD.API.Client.dll was not found in '$(_ApiServerBinPath)'. Set the AD_API_SERVER_BINARY_PATH environment variable to the Bin folder of your Advance Design installation or build." />
+  </Target>
+
+</Project>

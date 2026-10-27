@@ -1,0 +1,3 @@
+Local info, do not publish this!
+
+ The pictures are in the the dev.azure.com/Graitec/App%20AdvanceDesign/_git/app-advance-design-resources  submodule API\Test.API.Client\Docs. Check in "Other Files" local folder.
