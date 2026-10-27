@@ -10,14 +10,126 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <_ApiServerBinPath Condition="'$(AD_API_SERVER_BINARY_PATH)' != ''">$(AD_API_SERVER_BINARY_PATH)</_ApiServerBinPath>
-    <_ApiServerBinPath Condition="'$(AD_API_SERVER_BINARY_PATH)' == ''">..\..\..\ServerX64\bin\</_ApiServerBinPath>
+    <_ExplicitApiServerBinPath>$(AD_API_SERVER_BINARY_PATH)</_ExplicitApiServerBinPath>
+    <_ApiClientLaunchSettingsPath Condition="'$(_ApiClientLaunchSettingsPath)' == ''">$(MSBuildProjectDirectory)\Properties\launchSettings.json</_ApiClientLaunchSettingsPath>
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="AD.API.ClientHost">
-      <HintPath>$(_ApiServerBinPath)AD.API.ClientHost.dll</HintPath>
-    </Reference>
+    <Reference Include="AD.API.Client" />
   </ItemGroup>
+
+  <UsingTask TaskName="ReadLaunchProfileEnvironmentVariable"
+             TaskFactory="RoslynCodeTaskFactory"
+             AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <Task>
+      <Code Type="Class" Language="cs"><![CDATA[
+        using System;
+        using System.Collections.Generic;
+        using System.IO;
+        using System.Runtime.Serialization;
+        using System.Runtime.Serialization.Json;
+        using Microsoft.Build.Framework;
+        using Microsoft.Build.Utilities;
+
+        public sealed class ReadLaunchProfileEnvironmentVariable : Task
+        {
+          [Required]
+          public string LaunchSettingsPath { get; set; }
+
+          [Required]
+          public string ProfileName { get; set; }
+
+          [Required]
+          public string VariableName { get; set; }
+
+          [Output]
+          public string Value { get; set; } = string.Empty;
+
+          public override bool Execute()
+          {
+            if (!File.Exists(LaunchSettingsPath))
+              return true;
+
+            try
+            {
+              DataContractJsonSerializer serializer = new DataContractJsonSerializer(
+                typeof(LaunchSettings),
+                new DataContractJsonSerializerSettings { UseSimpleDictionaryFormat = true });
+
+              using (FileStream stream = File.OpenRead(LaunchSettingsPath))
+              {
+                LaunchSettings settings = (LaunchSettings)serializer.ReadObject(stream);
+                Profile profile;
+                string value;
+
+                if (settings?.Profiles != null &&
+                    settings.Profiles.TryGetValue(ProfileName, out profile) &&
+                    profile?.EnvironmentVariables != null &&
+                    profile.EnvironmentVariables.TryGetValue(VariableName, out value))
+                  Value = value ?? string.Empty;
+              }
+            }
+            catch (SerializationException exception)
+            {
+              Log.LogError("Cannot parse launch settings file '{0}': {1}", LaunchSettingsPath, exception.Message);
+              return false;
+            }
+            catch (IOException exception)
+            {
+              Log.LogError("Cannot read launch settings file '{0}': {1}", LaunchSettingsPath, exception.Message);
+              return false;
+            }
+            catch (UnauthorizedAccessException exception)
+            {
+              Log.LogError("Cannot read launch settings file '{0}': {1}", LaunchSettingsPath, exception.Message);
+              return false;
+            }
+
+            return true;
+          }
+
+          [DataContract]
+          private sealed class LaunchSettings
+          {
+            [DataMember(Name = "profiles")]
+            public Dictionary<string, Profile> Profiles { get; set; }
+          }
+
+          [DataContract]
+          private sealed class Profile
+          {
+            [DataMember(Name = "environmentVariables")]
+            public Dictionary<string, string> EnvironmentVariables { get; set; }
+          }
+        }
+      ]]></Code>
+    </Task>
+  </UsingTask>
+
+  <Target Name="ResolveApiClientReference" BeforeTargets="ResolveAssemblyReferences">
+    <ReadLaunchProfileEnvironmentVariable
+        LaunchSettingsPath="$(_ApiClientLaunchSettingsPath)"
+        ProfileName="Test.API.Client"
+        VariableName="AD_API_SERVER_BINARY_PATH">
+      <Output TaskParameter="Value" PropertyName="_LaunchSettingsApiServerBinPath" />
+    </ReadLaunchProfileEnvironmentVariable>
+
+    <PropertyGroup>
+      <_ApiServerBinPath Condition="'$(_LaunchSettingsApiServerBinPath)' != ''">$(_LaunchSettingsApiServerBinPath)</_ApiServerBinPath>
+      <_ApiServerBinPath Condition="'$(_LaunchSettingsApiServerBinPath)' == ''">$(_ExplicitApiServerBinPath)</_ApiServerBinPath>
+      <_ApiClientAssemblyPath Condition="'$(_ApiServerBinPath)' != ''">$([System.IO.Path]::Combine('$(_ApiServerBinPath)', 'AD.API.Client.dll'))</_ApiClientAssemblyPath>
+    </PropertyGroup>
+
+    <Error Condition="'$(_ApiServerBinPath)' == ''"
+           Text="AD.API.Client.dll cannot be resolved. Set AD_API_SERVER_BINARY_PATH in the Test.API.Client profile in '$(_ApiClientLaunchSettingsPath)', in the dotnet process environment, or with -p:AD_API_SERVER_BINARY_PATH=&lt;path&gt;." />
+    <Error Condition="'$(_ApiServerBinPath)' != '' and !Exists('$(_ApiClientAssemblyPath)')"
+           Text="AD.API.Client.dll was not found at '$(_ApiClientAssemblyPath)'. Update AD_API_SERVER_BINARY_PATH in the Test.API.Client launch profile, the dotnet process environment, or the command-line MSBuild property." />
+
+    <ItemGroup>
+      <Reference Condition="'%(Reference.Identity)' == 'AD.API.Client'">
+        <HintPath>$(_ApiClientAssemblyPath)</HintPath>
+      </Reference>
+    </ItemGroup>
+  </Target>
 
 </Project>

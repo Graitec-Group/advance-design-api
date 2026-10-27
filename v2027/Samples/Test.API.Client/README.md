@@ -102,24 +102,33 @@ Comprehensive sample exercising most of the API surface: materials, sections, li
 |-------------|-------|
 | **Advance Design 2027** installed and redistributables | The API server (`AD.API.Srv.exe`) ships with the product. At least build 2027.0.22035). Microsoft Access Database Engine 2016 Redistributable recommended https://www.microsoft.com/en-us/download/details.aspx?id=54920|
 | **.NET 8 SDK** | `dotnet --version` must be ≥ 8.0. |
-| Environment variables set | See the table below if they aren't defined already in launchSettings.json |
+| API configuration | Defaults are provided in `Properties/launchSettings.json`; see the table below. |
 
 ---
 
 ## Dependency
 
-This project references the `AD.API.ClientHost` dll which is in the Advance Design binary path(AD_API_SERVER_BINARY_PATH), which contains the generated HTTP client and session manager. The client assembly is not strongly named, so we reference it as a project dependency rather than a NuGet package.
+This project references `AD.API.Client.dll` from the Advance Design binary path (`AD_API_SERVER_BINARY_PATH`). The assembly contains the generated HTTP client and session manager and is referenced directly rather than through a NuGet package.
 
 ---
 
 ### Environment Variables
 
-The project ships with a `Properties/launchSettings.json` that sets **default values** for all three variables. When you run the project from Visual Studio or the `dotnet run` CLI the defaults are picked up automatically.
+The project ships with a `Properties/launchSettings.json` file that sets **default values** for all three variables. Visual Studio and `dotnet run` apply these values to the launched application.
 
-Override them with your own paths either:
-- in `Properties/launchSettings.json` or removing them from this json or deleting the json and setting them using the following 2 methods,  
-- in **Settings → System → Advanced system settings → Environment Variables → User variables**, or
-- from a PowerShell terminal (take effect after restarting your terminal / IDE):
+The build also reads `AD_API_SERVER_BINARY_PATH` from the `Test.API.Client` profile to locate `AD.API.Client.dll`. A nonempty launch-profile value has precedence. If it is missing or empty, the build uses the value inherited from the `dotnet` process or supplied with the `AD_API_SERVER_BINARY_PATH` MSBuild property.
+
+Change the primary value in `Properties/launchSettings.json`. To use an environment or command-line fallback instead, remove that variable from the launch profile or set it to an empty string, then use one of these options:
+
+```powershell
+$env:AD_API_SERVER_BINARY_PATH = "C:\Program Files\Graitec\Advance Design\2027\Bin\"
+dotnet build v2027\Samples\Test.API.Client\Test.API.Client-public.csproj
+
+dotnet build v2027\Samples\Test.API.Client\Test.API.Client-public.csproj `
+    '-p:AD_API_SERVER_BINARY_PATH=C:\Program Files\Graitec\Advance Design\2027\Bin\'
+```
+
+To persist the variables for future terminals and IDE sessions, configure them in **Settings → System → Advanced system settings → Environment Variables → User variables**, or run:
 
 ```powershell
 [System.Environment]::SetEnvironmentVariable(
@@ -150,14 +159,14 @@ Override them with your own paths either:
 
 ## Build & Run
 
-```bash
+```powershell
 # from the repository root
-dotnet build Applications/API/Test.API.Client/Test.API.Client.csproj
+dotnet build v2027\Samples\Test.API.Client\Test.API.Client-public.csproj
 
-dotnet run --project Applications/API/Test.API.Client/Test.API.Client.csproj
+dotnet run --project v2027\Samples\Test.API.Client\Test.API.Client-public.csproj
 ```
 
-Or open `Applications/API/API.sln` in Visual Studio 2022, set `Test.API.Client` as the startup project, and press **F5**.
+Or open `v2027\Samples\Test.API.Client\Test.API.Client.sln` in Visual Studio 2022, set `Test.API.Client` as the startup project, and press **F5**.
 
 The console will print per-step results. Press **Enter** at the end to close.
 
@@ -209,13 +218,13 @@ namespace Test.API.Client
 {
     internal partial class Program
     {
-        static void Sample_MySample(AD.API.ClientHost.AD_Client client)
+        static void Sample_MySample(AD.API.Client.AD_Client client)
         {
             // your code here
             var resp = client.NewProject("C:\\Temp\\MySample\\", new Environments
             {
-                Language = AD.API.ClientHost.Language_Code.ELanguageEnglish,
-                LogVerbosity = AD.API.ClientHost.LogVerboseLevel.Errors
+                Language = AD.API.Client.Language_Code.ELanguageEnglish,
+                LogVerbosity = AD.API.Client.LogVerboseLevel.Errors
             });
             PrintResultDetails(resp.Details, LogVerboseLevel.Errors, "New project");
             // ...
@@ -266,6 +275,6 @@ EID materialId = resp.Data; // the created object's ID
 
 | Project | Description |
 |---------|-------------|
-| `AD.API.ClientHost` | Generated HTTP client + session manager. Referenced as a project dependency. |
+| `AD.API.Client` | Generated HTTP client + session manager. Referenced as a project dependency. |
 | `AD.API.Srv` | The ASP.NET server that hosts the Advance Design engine. |
 | `Test.API.Client.UnitTests` | Integration tests that exercise the same API surface as this sample. |
