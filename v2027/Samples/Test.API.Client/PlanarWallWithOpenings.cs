@@ -34,6 +34,7 @@ namespace Test.API.Client
 			string projectPath = GetEnvironmentVariable("AD_MODELS_PATH") ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Graitec", "Advance Design", "2027", "Projects") + Path.DirectorySeparatorChar;
 			if (string.IsNullOrEmpty(projectPath))
 			{
+				SampleReport.Fatal("ERROR: Environment variable 'AD_MODELS_PATH' is not set. Aborting.");
 				Console.WriteLine("ERROR: Environment variable 'AD_MODELS_PATH' is not set. Aborting.");
 				return;
 			}
@@ -168,17 +169,25 @@ namespace Test.API.Client
 
 						// Verify expected counts
 						if (pl.Openings.Count == 2)
+						{
+							SampleReport.Pass("Openings count");
 							Console.WriteLine("  [PASS] Expected 2 openings, got 2.");
+						}
 						else
+						{
+							SampleReport.Fail($"Expected 2 openings, got {pl.Openings.Count}.");
 							Console.WriteLine($"  [FAIL] Expected 2 openings, got {pl.Openings.Count}.");
+						}
 					}
 					else
 					{
+						SampleReport.Fail("No openings returned! Expected 2 openings.");
 						Console.WriteLine("  [FAIL] No openings returned! Expected 2 openings.");
 					}
 				}
 				else
 				{
+					SampleReport.Fail($"Element not found or unexpected type (EID={idPlanar.Value}).");
 					Console.WriteLine($"  [FAIL] Element not found or unexpected type (EID={idPlanar.Value}).");
 				}
 			}

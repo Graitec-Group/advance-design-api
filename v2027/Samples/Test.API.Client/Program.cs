@@ -1,156 +1,151 @@
 using AD.API.Client;
 using System.Collections;
-using System.Threading;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Test.API.Client
 {
   internal partial class Program
   {
+    /// <summary>Exit code of a run in which no sample failed.</summary>
+    private const int ExitSuccess = 0;
+
+    /// <summary>Exit code when at least one sample failed or errored.</summary>
+    private const int ExitFailure = 1;
+
+    /// <summary>Exit code when the command line could not be parsed. Used by the sample runner.</summary>
+    private const int ExitBadCommandLine = 2;
+
     private static string? GetEnvironmentVariable(string name) =>
         Environment.GetEnvironmentVariable(name) ??   //first try from launchSettings.json
         Environment.GetEnvironmentVariable(name, EnvironmentVariableTarget.User) ?? //then try from user variables
-        Environment.GetEnvironmentVariable(name, EnvironmentVariableTarget.Machine); //finally try from machine variables    
+        Environment.GetEnvironmentVariable(name, EnvironmentVariableTarget.Machine); //finally try from machine variables
 
-    //async version of main to allow awaiting the server start and service availability check without blocking the main thread
-    static async Task Main(string[] args)
+    /// <summary>Base URL of the API server, from the environment or the default one.</summary>
+    internal static string GetApiServerUrl() =>
+        GetEnvironmentVariable("AD_API_SERVER_URL") ?? CSessionManager.DefaultApiBaseUrl;
+
+    /// <summary>
+    /// Entry point.
+    /// <para>
+    /// This project is the console sample client. When the optional Test.API.Client.SampleRunner
+    /// folder is present next to it, that folder adds the runner window, the unattended batch
+    /// run and the command line on top - see SampleRunnerEntryPoint.cs there. Without it, this
+    /// is the numbered menu it has always been.
+    /// </para>
+    /// <para>
+    /// <c>[STAThread]</c> is unconditional: WPF requires it, and it costs nothing here.
+    /// </para>
+    /// </summary>
+    [STAThread]
+    static int Main(string[] args)
     {
-      // Assembly resolver is registered at module-load time via AssemblyResolver.Initialize()
-      // (see AssemblyResolver.cs) so that AD.API.Client.dll and its transitive dependencies
-      // are available before the JIT compiles this method.
-      string serverBinPath = AssemblyResolver.ServerBinPath;
+#if SAMPLE_RUNNER
+      return RunSampleRunner(args);
+#else
+      return RunConsoleMenu();
+#endif
+    }
 
-      string connectionServer= GetEnvironmentVariable("AD_API_SERVER_URL") ?? CSessionManager.DefaultApiBaseUrl;
+#if !SAMPLE_RUNNER
+    /// <summary>
+    /// Numbered menu, one sample, one verdict. Deliberately self contained: this is what the
+    /// public sample ships, and it must not depend on anything outside this folder.
+    /// </summary>
+    private static int RunConsoleMenu()
+    {
+      string serverUrl = GetApiServerUrl();
 
-      //if the server isn't already running at DefaultApiBaseUrl, start a new one (assuming the API server is located in the installation path)
-      if (!await CSessionManager.IsServiceAvailableAsync(connectionServer))
-      {        
-				connectionServer = await CSessionManager.StartNewSessionAsync(serverBinPath, /*windowlessConsole : true for no server console window*/false);
-      }
-        
-			Console.WriteLine("Connecting to API server " + connectionServer);
-			//Console.WriteLine("Press ENTER to continue"); Console.ReadLine();
+      //if the server isn't already running, start a new one (assuming the API server is located in the installation path)
+      if (!CSessionManager.IsServiceAvailable(serverUrl))
+        serverUrl = CSessionManager.StartNewSession(AssemblyResolver.ServerBinPath, /*windowLessConsole*/ false);
 
-      if (System.String.IsNullOrEmpty(connectionServer))
+      if (string.IsNullOrEmpty(serverUrl))
       {
-        Console.WriteLine("connection server empty due to AD.API.Srv timeout or missing AD_API_SERVER_URL and AD_API_SERVER_BINARY_PATH in launchSettings.json or user/system environement variables !!");
+        Console.WriteLine("Could not reach or start the API server.");
+        Console.WriteLine("Check AD_API_SERVER_URL and AD_API_SERVER_BINARY_PATH in the user or system environment variables.");
         Console.ReadLine();
-      }      
+        return ExitFailure;
+      }
 
-      // Present a menu so the user can choose which sample to run
-      var samples = new (string Label, Action<AD_Client> Run)[]
-      {        
-        ("Analysis results(on column): Imposed displacement structure with result verification",             c => Sample_ImposedDisplacementVerificationOnColumn(c)),
-        ("Analysis results(on supports and beam ): Portal frame 3 elements analysis verification (5% tol)",              c => Sample_PortalFrame3ElementsAnalysisVerificationOnBeamAndSupports(c)),
-        ("Analysis results(on supports): 4-column slab support with Fz applied on it, verification sum of Fz in supports(Europe, 1% tol)",        c => Sample_SlabOn4ColumnsSupportFzVerificationItReachesSupports(c)),
-        ("Analysis results(on slab): Slab with rigid linear supports, analysis and all results on slab", c => Sample_PlanarSlabRigidLinearSupportsFrance(c)),
-        
-        ("Climatic: 3D building with wind (EN 1991-1-4) and snow (EN 1991-1-3) auto generation (France)", c => Sample_WindSnow3DBuildingAutoGeneration(c)),
-        ("Climatic: Portal 2D Structure and IBC (ASCE 7-22) Climatic Generation",          c => Sample_Portal2DStructureAndCLimaticGeneration(c)),
-        ("Climatic: Portal 2D Structure and IBC (ASCE 7-22) Climatic Generation (multiple roof elements)", c => Sample_Portal2DStructureAndCLimaticGeneration_wMultipleElementsInTheRoof(c)),
-        ("Climatic: Portal 2D with Protruding Roof / Overhangs and IBC (ASCE 7-22) Climatic Generation", c => Sample_Portal2DwithProtrudingRoofOrOverhangsandClimaticGeneration(c)),
+      Console.WriteLine("Connected to " + serverUrl);
 
-        ("Intentional error testing: Structure with intentional material error",                           c => Sample_With_IntentionalMaterialError(c)),
-        ("Properties setting and model management: Custom properties set and verification after reopen",                 c => Sample_CustomPropertiesVerificationOnReopen(c)),
-			  ("Planar Wall With Linear Support And Results",                                                    c => Sample_PlanarWallWithLinearSupportAndResults(c)),
-			  ("Planar Support With Planar Element And Results",                                                 c => Sample_PlanarSupportWithPlanarElementAndResults(c)),
-        ("Pylon climatic                                ",                                                 c => Sample_PylonElectricityStructureAndClimaticGeneration(c)),
-        ("Planar Wall With Openings (holes test)",                                                       c => Sample_PlanarWallWithOpenings(c)),
-        ("Materials and Sections retrieval: GetListMaterials, GetListSections, GetMaterials, GetSections", c => Sample_MaterialAndSectionRetrieval(c)),
-        
-      };
+      // The list lives in SampleCatalog.cs.
+      var samples = Samples;
 
       Console.WriteLine();
       Console.WriteLine("Select a sample to run:");
-      for (int i = 0; i < samples.Length; i++)
-        Console.WriteLine($"  [{i + 1}] {samples[i].Label}");
-      Console.Write("Choice (1-{0}): ", samples.Length);
+      for (int i = 0; i < samples.Count; i++)
+        Console.WriteLine($"  [{samples[i].Number}] {samples[i].Label}");
+      Console.Write($"Choice (1-{samples.Count}): ");
 
-      int choice = 0;
+      int choice;
       while (true)
       {
         string? input = Console.ReadLine();
-        if (int.TryParse(input, out choice) && choice >= 1 && choice <= samples.Length)
+        if (input is null)
+          return ExitFailure;   // stdin closed: nothing to choose from
+        if (int.TryParse(input, out choice) && choice >= 1 && choice <= samples.Count)
           break;
-        Console.Write($"Invalid input. Enter a number between 1 and {samples.Length}: ");
+        Console.Write($"Invalid input. Enter a number between 1 and {samples.Count}: ");
       }
-      
-      var selectedSample = samples[choice - 1];
-      Console.WriteLine($"Running: {selectedSample.Label}");
+
+      var selected = samples[choice - 1];
+      Console.WriteLine($"Running: {selected.Label}");
       Console.WriteLine();
-      //end samples options menu
 
-      // lauch two threads to test the client
-      Thread thread1 = new Thread(() =>
+      SampleOutcome outcome = SampleOutcome.NotRun;
+      string detail = string.Empty;
+
+      // The sample runs on its own thread, as it always did.
+      var worker = new Thread(() =>
       {
-        using var httpClient = new HttpClient(new System.Net.Http.SocketsHttpHandler
+        using var httpClient = new HttpClient(new SocketsHttpHandler
         {
-          PooledConnectionLifetime = System.Threading.Timeout.InfiniteTimeSpan,
+          PooledConnectionLifetime = Timeout.InfiniteTimeSpan,
         });
-        AD.API.Client.AD_Client client = new AD_Client(connectionServer, httpClient);
+        var client = new AD_Client(serverUrl, httpClient);
 
-        //choose your sample to run
-        selectedSample.Run(client);
+        // The report scope lets the sample record its verifications explicitly, so the verdict
+        // below comes from the sample code and not from parsing the output.
+        using var scope = SampleReport.BeginSample(selected.Label);
+        Exception? error = null;
 
-        client.CloseSession();
+        try
+        {
+          selected.Run(client);
+        }
+        catch (Exception ex)
+        {
+          error = ex;
+          Console.WriteLine($"EXCEPTION: {ex}");
+        }
+        finally
+        {
+          // Best effort: do not lose the verdict because closing the session throws.
+          try
+          {
+            client.CloseSession();
+          }
+          catch (Exception ex)
+          {
+            Console.WriteLine($"CloseSession failed: {ex.Message}");
+          }
+        }
+
+        outcome = scope.Report.Resolve(error, canceled: false);
+        detail = error is null ? scope.Report.Describe() : error.Message;
       });
 
-      //Thread thread2 = new Thread(() =>
-      //{ // Create a second client in the main thread
-      //  string connectionServer2 = CSessionManager.StartNewSession();
-      //  using var httpClient2 = new HttpClient();
-      //  AD.API.Client.AD_Client client2 = new AD_Client(connectionServer2, httpClient2);
+      worker.Start();
+      worker.Join();
 
-      //  Sample_SlabOn4ColumnsSupportFzVerification(client); //BigSampletestingMostAPIFunctions
-      //  client2.CloseSession().GetAwaiter().GetResult();
-      //});
-
-      thread1.Start();
-//      thread2.Start();
-
-      thread1.Join(); // Wait for the thread to finish before continuing
-//      thread2.Join(); // Wait for the thread to finish before continuing
-
+      Console.WriteLine();
+      Console.WriteLine($"RESULT: {outcome.ToDisplayText().ToUpperInvariant()} ({detail})");
       Console.WriteLine("done");
       Console.ReadLine();
+
+      return outcome.IsFailure() ? ExitFailure : ExitSuccess;
     }
-
-    //synchronous version of main, kept for reference example and easy switching if needed
-    /*static void Main(string[] args)
-    {
-      string connectionServer = GetEnvironmentVariable("AD_API_SERVER_URL") ?? CSessionManager.DefaultApiBaseUrl;
-
-      //if the server isn't already running at DefaultApiBaseUrl, start a new one (assuming the API server is located in the installation path)
-      if (!CSessionManager.IsServiceAvailable(connectionServer))
-      {
-        string serverFullPath = GetEnvironmentVariable("AD_API_SERVER_BINARY_PATH") ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Graitec", "Advance Design", "2027", "Bin") + Path.DirectorySeparatorChar;
-				connectionServer = CSessionManager.StartNewSession(serverFullPath, false);// windowlessConsole : true for no server console window
-      }
-
-      Console.WriteLine("Connecting to API server " + connectionServer);
-          //Console.WriteLine("Press ENTER to continue"); Console.ReadLine();
-
-          if (System.String.IsNullOrEmpty(connectionServer))
-          {
-            Console.WriteLine("connection server empty !! Check system variables AD_API_SERVER_URL and  AD_API_SERVER_BINARY_PATH !!");
-            Console.ReadLine();
-          }
-
-          using var httpClient = new HttpClient(new System.Net.Http.SocketsHttpHandler
-          {
-            PooledConnectionLifetime = System.Threading.Timeout.InfiniteTimeSpan,
-          });
-          AD.API.Client.AD_Client client = new AD_Client(connectionServer, httpClient);
-
-      
-          Sample_Portal2DStructureAndCLimaticGeneration(client);
-
-          client.CloseSession();
-      
-          Console.WriteLine("done");
-          Console.ReadLine();
-        }
-    */
+#endif
 
 #region diagnostics_helpers
     /// <summary>
@@ -174,6 +169,33 @@ namespace Test.API.Client
       return diagnostics == null || diagnostics.Count == 0
         ? "(none)"
         : string.Join("; ", diagnostics.Select(d => d?.Message ?? "?"));
+    }
+
+    /// <summary>
+    /// Prompts for a model (.fto) file path. Pressing ENTER accepts the default; surrounding
+    /// quotes (from copy/paste or drag &amp; drop) are trimmed.
+    /// <para>
+    /// This method is the seam a sample uses to ask for a value. On its own it prompts on the
+    /// console, exactly as it always did. With the sample runner add-on the request is routed
+    /// through <c>SampleInput</c> instead, which turns it into a prefilled dialog in the window
+    /// and into the declared default in an unattended run. A sample never calls either directly.
+    /// </para>
+    /// </summary>
+    static string PromptForModelFile(string defaultPath)
+    {
+#if SAMPLE_RUNNER
+      return SampleInput.AskForModelFile(defaultPath);
+#else
+      Console.WriteLine("Enter the path to the .fto model file, or press ENTER to use the default:");
+      Console.WriteLine($"  default: {defaultPath}");
+      Console.Write("Path: ");
+
+      string? input = Console.ReadLine();
+      if (string.IsNullOrWhiteSpace(input))
+        return defaultPath;
+
+      return input.Trim().Trim('"');
+#endif
     }
 
 		static void PrintResultDetails(ApiResponseDetails details, LogVerboseLevel levelOfVerbosity, string introMessage)

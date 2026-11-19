@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <OutputPath>..\..\..\ServerX64\bin\</OutputPath>
+    <StartupObject>Test.API.Client.Program</StartupObject>
+  </PropertyGroup>
+
+  <!--
+    Optional sample runner (window, batch run, command line). Its sources live in the sibling
+    Test.API.Client.SampleRunner folder, which the public samples package does not ship: when it
+    is absent this project is the console application it has always been, and nothing here has
+    to change. Set IncludeSampleRunner=false to build the console-only shape even with the
+    folder present.
+  -->
+  <PropertyGroup>
+    <IncludeSampleRunner Condition="'$(IncludeSampleRunner)' == ''">true</IncludeSampleRunner>
+    <_SampleRunnerProps>$([MSBuild]::NormalizeDirectory('$(MSBuildProjectDirectory)', '..', 'Test.API.Client.SampleRunner'))Test.API.Client.SampleRunner.props</_SampleRunnerProps>
+  </PropertyGroup>
+
+  <Import Project="$(_SampleRunnerProps)" Condition="'$(IncludeSampleRunner)' == 'true' And Exists('$(_SampleRunnerProps)')" />
+
+  <ItemGroup>
+    <ProjectReference Include="..\AD.API.ClientHost\AD.API.Client.csproj" />
+  </ItemGroup>
+
+</Project>

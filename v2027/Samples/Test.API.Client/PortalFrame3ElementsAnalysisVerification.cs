@@ -45,6 +45,7 @@ namespace Test.API.Client
       PrintResultDetails(newProj.Details, logVerbosityLevel, "Create new project");
       if (!newProj.Details.Success || newProj.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: NewProject failed. Aborting.");
         Console.WriteLine("ERROR: NewProject failed. Aborting.");
         return;
       }
@@ -54,6 +55,7 @@ namespace Test.API.Client
       PrintResultDetails(respMaterial.Details, logVerbosityLevel, "Create material C25/30");
       if (!respMaterial.Details.Success || respMaterial.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: CreateMaterial failed. Aborting.");
         Console.WriteLine("ERROR: CreateMaterial failed. Aborting.");
         client.CloseProject();
         return;
@@ -66,6 +68,7 @@ namespace Test.API.Client
       PrintResultDetails(respSection.Details, logVerbosityLevel, "Create section R20/30");
       if (!respSection.Details.Success || respSection.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: CreateSection failed. Aborting.");
         Console.WriteLine("ERROR: CreateSection failed. Aborting.");
         client.CloseProject();
         return;
@@ -250,9 +253,12 @@ namespace Test.API.Client
       PrintResultDetails(respAnalysis.Details, logVerbosityLevel, "Launch analysis");
       bool analysisOk = respAnalysis.Data;
       Console.WriteLine("  Analysis result: " + (analysisOk ? "succeeded" : "FAILED"));
+      if (analysisOk)
+        SampleReport.Pass("LaunchAnalysis");
 
       if (!analysisOk)
       {
+        SampleReport.Fatal("ERROR: Analysis failed. Cannot retrieve results.");
         Console.WriteLine("ERROR: Analysis failed. Cannot retrieve results.");
         client.CloseProject();
         return;
@@ -482,6 +488,7 @@ namespace Test.API.Client
     {
       if (resp?.Data == null)
       {
+        SampleReport.Fail(label, "no data returned, force verification skipped");
         Console.WriteLine($"  {label}: no data returned – skipping force verification.");
         return;
       }
@@ -489,6 +496,7 @@ namespace Test.API.Client
       var sup = resp.Data.OfType<ResPunctualSupport>().FirstOrDefault();
       if (sup?.ResNode?.ResForces == null)
       {
+        SampleReport.Fail(label, "no ResPunctualSupport with ResForces found, verification skipped");
         Console.WriteLine($"  {label}: no ResPunctualSupport with ResForces found – skipping.");
         return;
       }
@@ -515,6 +523,7 @@ namespace Test.API.Client
     {
       if (resp?.Data == null)
       {
+        SampleReport.Fail(label, "no data returned, diagram verification skipped");
         Console.WriteLine($"  {label}: no data returned – skipping diagram verification.");
         return;
       }
@@ -522,6 +531,7 @@ namespace Test.API.Client
       var beam = resp.Data.OfType<ResElementLinear>().FirstOrDefault();
       if (beam == null)
       {
+        SampleReport.Fail(label, "no ResElementLinear found, diagram verification skipped");
         Console.WriteLine($"  {label}: no ResElementLinear found – skipping.");
         return;
       }
@@ -529,6 +539,7 @@ namespace Test.API.Client
       var diagram = diagramSelector(beam);
       if (diagram == null || diagram.Count == 0)
       {
+        SampleReport.Fail(label, "diagram is empty, verification skipped");
         Console.WriteLine($"  {label}: diagram is empty – skipping.");
         return;
       }
@@ -564,11 +575,13 @@ namespace Test.API.Client
       if (pass)
       {
         passCount++;
+        SampleReport.Pass(label);
         Console.ForegroundColor = ConsoleColor.Green;
         Console.WriteLine($"    PASS  {label}: actual={actual:G6}  expected={expected:G6}  (±{relativeTolerance * 100:F0}%)");
       }
       else
       {
+        SampleReport.Fail(label, $"actual={actual:G6}, expected={expected:G6}, allowed=±{relativeTolerance * 100:F0}%");
         Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine($"    FAIL  {label}: actual={actual:G6}  expected={expected:G6}  " +
           $"diff={Math.Abs(actual - expected):G4}  allowed={allowedDelta:G4}  (±{relativeTolerance * 100:F0}%)");

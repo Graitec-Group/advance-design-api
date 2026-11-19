@@ -38,6 +38,7 @@ namespace Test.API.Client
       PrintResultDetails(newProj.Details, logVerbosityLevel, "Create new project");
       if (!newProj.Details.Success || newProj.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: NewProject failed. Aborting.");
         Console.WriteLine("ERROR: NewProject failed. Aborting.");
         return;
       }
@@ -47,6 +48,7 @@ namespace Test.API.Client
       PrintResultDetails(respMaterial.Details, logVerbosityLevel, "Create material C25/30");
       if (!respMaterial.Details.Success || respMaterial.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: CreateMaterial C25/30 failed. Aborting.");
         Console.WriteLine("ERROR: CreateMaterial C25/30 failed. Aborting.");
         client.CloseProject();
         return;
@@ -77,6 +79,7 @@ namespace Test.API.Client
         PrintResultDetails(resp.Details, logVerbosityLevel, "Create planar element (0.15m shell, 42m²)");
         if (!resp.Details.Success || resp.Details.HasErrors)
         {
+          SampleReport.Fatal("ERROR: CreateElement (planar) failed. Aborting.");
           Console.WriteLine("ERROR: CreateElement (planar) failed. Aborting.");
           client.CloseProject();
           return;
@@ -102,6 +105,7 @@ namespace Test.API.Client
         PrintResultDetails(resp.Details, logVerbosityLevel, "Create rigid linear support 1 (5,7,0)→(11,7,0)");
         if (!resp.Details.Success || resp.Details.HasErrors)
         {
+          SampleReport.Fatal("ERROR: CreateElement (linear support 1) failed. Aborting.");
           Console.WriteLine("ERROR: CreateElement (linear support 1) failed. Aborting.");
           client.CloseProject();
           return;
@@ -127,6 +131,7 @@ namespace Test.API.Client
         PrintResultDetails(resp.Details, logVerbosityLevel, "Create rigid linear support 2 (5,0,0)→(11,0,0)");
         if (!resp.Details.Success || resp.Details.HasErrors)
         {
+          SampleReport.Fatal("ERROR: CreateElement (linear support 2) failed. Aborting.");
           Console.WriteLine("ERROR: CreateElement (linear support 2) failed. Aborting.");
           client.CloseProject();
           return;
@@ -140,6 +145,7 @@ namespace Test.API.Client
       PrintResultDetails(respLiveFamily.Details, logVerbosityLevel, "Create live loads family");
       if (!respLiveFamily.Details.Success || respLiveFamily.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: CreateInformationalElement (live family) failed. Aborting.");
         Console.WriteLine("ERROR: CreateInformationalElement (live family) failed. Aborting.");
         client.CloseProject();
         return;
@@ -157,6 +163,7 @@ namespace Test.API.Client
       PrintResultDetails(respLiveCase.Details, logVerbosityLevel, "Create live load case");
       if (!respLiveCase.Details.Success || respLiveCase.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: CreateInformationalElement (live case) failed. Aborting.");
         Console.WriteLine("ERROR: CreateInformationalElement (live case) failed. Aborting.");
         client.CloseProject();
         return;
@@ -195,6 +202,7 @@ namespace Test.API.Client
       PrintResultDetails(respDeadFamily.Details, logVerbosityLevel, "Create dead loads family");
       if (!respDeadFamily.Details.Success || respDeadFamily.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: CreateInformationalElement (dead family) failed. Aborting.");
         Console.WriteLine("ERROR: CreateInformationalElement (dead family) failed. Aborting.");
         client.CloseProject();
         return;
@@ -211,6 +219,7 @@ namespace Test.API.Client
       PrintResultDetails(respDeadCase.Details, logVerbosityLevel, "Create dead load case");
       if (!respDeadCase.Details.Success || respDeadCase.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: CreateInformationalElement (dead case) failed. Aborting.");
         Console.WriteLine("ERROR: CreateInformationalElement (dead case) failed. Aborting.");
         client.CloseProject();
         return;
@@ -231,6 +240,7 @@ namespace Test.API.Client
       PrintResultDetails(respCombo.Details, logVerbosityLevel, "Add ULS combination 1.35×Dead + 1.50×Live");
       if (!respCombo.Details.Success || respCombo.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: AddCombination failed. Aborting.");
         Console.WriteLine("ERROR: AddCombination failed. Aborting.");
         client.CloseProject();
         return;
@@ -243,9 +253,12 @@ namespace Test.API.Client
       PrintResultDetails(respAnalysis.Details, logVerbosityLevel, "Launch analysis");
       bool analysisOk = respAnalysis.Data;
       Console.WriteLine("  Analysis result: " + (analysisOk ? "succeeded" : "FAILED"));
+      if (analysisOk)
+        SampleReport.Pass("LaunchAnalysis");
 
       if (!analysisOk)
       {
+        SampleReport.Fatal("ERROR: Analysis failed. Cannot retrieve results.");
         Console.WriteLine("ERROR: Analysis failed. Cannot retrieve results.");
         client.CloseProject();
         return;

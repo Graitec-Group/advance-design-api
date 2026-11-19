@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "Test.API.Client": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "AD_API_SERVER_BINARY_PATH": "C:\\Sources\\ADrepos\\DevAD\\ServerX64\\bin\\",
+        "AD_MODELS_PATH": "c:\\Advance Design 22.1\\Projects\\Work\\ApiIntegrationTest\\",
+        "AD_API_SERVER_URL": "http://localhost:52000/"
+      }
+    }
+  }
+}

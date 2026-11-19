@@ -28,6 +28,7 @@ namespace Test.API.Client
       string projectPath = GetEnvironmentVariable("AD_MODELS_PATH") ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Graitec", "Advance Design", "2027", "Projects") + Path.DirectorySeparatorChar;
       if (System.String.IsNullOrEmpty(projectPath))
       {
+        SampleReport.Fatal("ERROR: Environment variable 'AD_MODELS_PATH' is not set. Aborting.");
         Console.WriteLine("ERROR: Environment variable 'AD_MODELS_PATH' is not set. Aborting.");
         return;
       }      
@@ -49,6 +50,7 @@ namespace Test.API.Client
       Console.WriteLine($"Create material S235: Success={respMaterialS235.Details.Success}, HasErrors={respMaterialS235.Details.HasErrors}, Diagnostics={DiagText(respMaterialS235.Details.Diagnostics)}");
       if (!respMaterialS235.Details.Success || respMaterialS235.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: CreateMaterial S235 failed. Aborting.");
         Console.WriteLine("ERROR: CreateMaterial S235 failed. Aborting.");
         client.CloseProject();
         return;
@@ -60,6 +62,7 @@ namespace Test.API.Client
       Console.WriteLine($"Create material C25/30: Success={respMaterialConcrete.Details.Success}, HasErrors={respMaterialConcrete.Details.HasErrors}, Diagnostics={DiagText(respMaterialConcrete.Details.Diagnostics)}");
       if (!respMaterialConcrete.Details.Success || respMaterialConcrete.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: CreateMaterial C25/30 failed. Aborting.");
         Console.WriteLine("ERROR: CreateMaterial C25/30 failed. Aborting.");
         client.CloseProject();
         return;
@@ -73,6 +76,7 @@ namespace Test.API.Client
       Console.WriteLine($"Create section IPE400: Success={respSectionIPE400.Details.Success}, HasErrors={respSectionIPE400.Details.HasErrors}, Diagnostics={DiagText(respSectionIPE400.Details.Diagnostics)}");
       if (!respSectionIPE400.Details.Success || respSectionIPE400.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: CreateSection IPE400 failed. Aborting.");
         Console.WriteLine("ERROR: CreateSection IPE400 failed. Aborting.");
         client.CloseProject();
         return;
@@ -251,6 +255,7 @@ namespace Test.API.Client
 				//Console.WriteLine($"ClimaticAutoGeneration: Success={resp.Details.Success}, HasErrors={resp.Details.HasErrors}, Data={resp.Data}, Diagnostics={DiagText(resp.Details.Diagnostics)}");
 				if (!resp.Details.Success || resp.Details.HasErrors)
 				{
+					SampleReport.Fatal("ERROR: ClimaticAutoGeneration failed check details above.");
 					Console.WriteLine("ERROR: ClimaticAutoGeneration failed check details above.");
 					client.CloseProject();
 					return;
@@ -400,6 +405,400 @@ namespace Test.API.Client
 			Console.WriteLine("Sample_PortalStructure1: Close the project.");
 		}
 
+    /// <summary>
+    /// Portal structure example 1 Canada: 4 steel linear elements (S235/IPE400) forming a portal frame
+    /// with 2 rigid supports at the base. Creates Canadian CBN wind and snow family load cases,
+    /// runs ClimaticAutoGeneration, and reads back the generated loads.
+    /// </summary>
+    static void Sample_Portal2DStructureAndCLimaticGeneration_CanadaCBN(AD.API.Client.AD_Client client)
+    {
+      // Set desired log verbosity level for diagnostics
+      LogVerboseLevel logVerbosityLevel = LogVerboseLevel.Errors;//LogVerboseLevel.AllDetails gives also warnings and additional information
+      Environments env = new Environments()
+      {
+        Language = Language_Code.ELanguageEnglish,
+        Localization = Localization_Code.LOCALIZATION_CANADA,
+        LogVerbosity = logVerbosityLevel
+      };
+
+      string projectPath = GetEnvironmentVariable("AD_MODELS_PATH") ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Graitec", "Advance Design", "2027", "Projects") + Path.DirectorySeparatorChar;
+      if (System.String.IsNullOrEmpty(projectPath))
+      {
+        SampleReport.Fatal("ERROR: Environment variable 'AD_MODELS_PATH' is not set. Aborting.");
+        Console.WriteLine("ERROR: Environment variable 'AD_MODELS_PATH' is not set. Aborting.");
+        return;
+      }
+
+      var newProj = client.NewProject(projectPath + "WindAndSnowOn2DPortalCanadaCBN_" + Guid.NewGuid().ToString() + ".fto", env);
+      //result diagnostics
+      //way 1:// Console.WriteLine($"Create new project Success={newProj.Details.Success}, HasErrors={newProj.Details.HasErrors}, Diagnostics={DiagText(newProj.Details.Diagnostics)}");
+      //way 2:
+      /*if (newProj.Details.HasErrors)
+      {
+        DumpError(newProj.Details);
+      }*/
+      //way 3:
+      PrintResultDetails(newProj.Details, logVerbosityLevel, "Create new project");
+
+      // Create material S235 (steel) for linear elements
+      Material materialS235 = new Material { Name = "S235" };
+      var respMaterialS235 = client.CreateMaterial(materialS235);
+      Console.WriteLine($"Create material S235: Success={respMaterialS235.Details.Success}, HasErrors={respMaterialS235.Details.HasErrors}, Diagnostics={DiagText(respMaterialS235.Details.Diagnostics)}");
+      if (!respMaterialS235.Details.Success || respMaterialS235.Details.HasErrors)
+      {
+        SampleReport.Fatal("ERROR: CreateMaterial S235 failed. Aborting.");
+        Console.WriteLine("ERROR: CreateMaterial S235 failed. Aborting.");
+        client.CloseProject();
+        return;
+      }
+
+      //create concrete material for supports
+      Material materialConcrete = new Material { Name = "C25/30" };
+      var respMaterialConcrete = client.CreateMaterial(materialConcrete);
+      Console.WriteLine($"Create material C25/30: Success={respMaterialConcrete.Details.Success}, HasErrors={respMaterialConcrete.Details.HasErrors}, Diagnostics={DiagText(respMaterialConcrete.Details.Diagnostics)}");
+      if (!respMaterialConcrete.Details.Success || respMaterialConcrete.Details.HasErrors)
+      {
+        SampleReport.Fatal("ERROR: CreateMaterial C25/30 failed. Aborting.");
+        Console.WriteLine("ERROR: CreateMaterial C25/30 failed. Aborting.");
+        client.CloseProject();
+        return;
+      }
+
+      EID idMaterialS235 = respMaterialS235.Data;
+      Console.WriteLine("  Material S235 OID: " + idMaterialS235.Value.ToString());
+
+      // Create section IPE400
+      var respSectionIPE400 = client.CreateSection("IPE400");
+      Console.WriteLine($"Create section IPE400: Success={respSectionIPE400.Details.Success}, HasErrors={respSectionIPE400.Details.HasErrors}, Diagnostics={DiagText(respSectionIPE400.Details.Diagnostics)}");
+      if (!respSectionIPE400.Details.Success || respSectionIPE400.Details.HasErrors)
+      {
+        SampleReport.Fatal("ERROR: CreateSection IPE400 failed. Aborting.");
+        Console.WriteLine("ERROR: CreateSection IPE400 failed. Aborting.");
+        client.CloseProject();
+        return;
+      }
+      EID idSectionIPE400 = respSectionIPE400.Data;
+      Console.WriteLine("  Section IPE400 OID: " + idSectionIPE400.Value.ToString());
+
+      // Create 4 linear elements forming the portal frame
+      // Element 1: column (5,0,0) -> (5,0,5)
+      {
+        ElementLinear el = new ElementLinear
+        {
+          Section = idSectionIPE400,
+          Material = idMaterialS235,
+          GeomPtStart = new Pt3D { X = 5.0, Y = 0.0, Z = 0.0 },
+          GeomPtEnd = new Pt3D { X = 5.0, Y = 0.0, Z = 5.0 },
+          LoadAreaLoadTransferProperties = new LinearLoadAreaLoadTransfer { ClimaticLE2D = true }
+        };
+        var resp = client.CreateElement(el);
+        Console.WriteLine($"Create linear element 1 (column): Success={resp.Details.Success}, HasErrors={resp.Details.HasErrors}, Diagnostics={DiagText(resp.Details.Diagnostics)}");
+        if (resp.Details.Success && !resp.Details.HasErrors)
+          Console.WriteLine("  Element 1 ID: " + resp.Data.Value.ToString());
+      }
+
+      // Element 2: rafter (5,0,5) -> (15,0,7)
+      {
+        ElementLinear el = new ElementLinear
+        {
+          Section = idSectionIPE400,
+          Material = idMaterialS235,
+          GeomPtStart = new Pt3D { X = 5.0, Y = 0.0, Z = 5.0 },
+          GeomPtEnd = new Pt3D { X = 15.0, Y = 0.0, Z = 7.0 },
+          LoadAreaLoadTransferProperties = new LinearLoadAreaLoadTransfer { ClimaticLE2D = true }
+        };
+        var resp = client.CreateElement(el);
+        Console.WriteLine($"Create linear element 2 (rafter): Success={resp.Details.Success}, HasErrors={resp.Details.HasErrors}, Diagnostics={DiagText(resp.Details.Diagnostics)}");
+        if (resp.Details.Success && !resp.Details.HasErrors)
+          Console.WriteLine("  Element 2 ID: " + resp.Data.Value.ToString());
+      }
+
+      // Element 3: rafter (15,0,7) -> (29,0,5)
+      {
+        ElementLinear el = new ElementLinear
+        {
+          Section = idSectionIPE400,
+          Material = idMaterialS235,
+          GeomPtStart = new Pt3D { X = 15.0, Y = 0.0, Z = 7.0 },
+          GeomPtEnd = new Pt3D { X = 29.0, Y = 0.0, Z = 5.0 },
+          LoadAreaLoadTransferProperties = new LinearLoadAreaLoadTransfer { ClimaticLE2D = true }
+        };
+        var resp = client.CreateElement(el);
+        Console.WriteLine($"Create linear element 3 (rafter): Success={resp.Details.Success}, HasErrors={resp.Details.HasErrors}, Diagnostics={DiagText(resp.Details.Diagnostics)}");
+        if (resp.Details.Success && !resp.Details.HasErrors)
+          Console.WriteLine("  Element 3 ID: " + resp.Data.Value.ToString());
+      }
+
+      // Element 4: column (29,0,5) -> (29,0,0)
+      {
+        ElementLinear el = new ElementLinear
+        {
+          Section = idSectionIPE400,
+          Material = idMaterialS235,
+          GeomPtStart = new Pt3D { X = 29.0, Y = 0.0, Z = 5.0 },
+          GeomPtEnd = new Pt3D { X = 29.0, Y = 0.0, Z = 0.0 },
+          LoadAreaLoadTransferProperties = new LinearLoadAreaLoadTransfer { ClimaticLE2D = true }
+        };
+        var resp = client.CreateElement(el);
+        Console.WriteLine($"Create linear element 4 (column): Success={resp.Details.Success}, HasErrors={resp.Details.HasErrors}, Diagnostics={DiagText(resp.Details.Diagnostics)}");
+        if (resp.Details.Success && !resp.Details.HasErrors)
+          Console.WriteLine("  Element 4 ID: " + resp.Data.Value.ToString());
+      }
+
+      // Create 2 rigid point supports at the base
+      {
+        ElementRigidPunctualSupport support = new ElementRigidPunctualSupport
+        {
+          GeomPt = new Pt3D { X = 5.0, Y = 0.0, Z = 0.0 },
+          //Restraints = new DegreeOfFreedomRestraints { Tx = true, Ty = true, Tz = true, Rx = true, Ry = true, Rz = true }
+          Material = respMaterialConcrete.Data // Assign concrete material to supports
+        };
+        var resp = client.CreateElement(support);
+        Console.WriteLine($"Create rigid support 1: Success={resp.Details.Success}, HasErrors={resp.Details.HasErrors}, Diagnostics={DiagText(resp.Details.Diagnostics)}");
+        if (resp.Details.Success && !resp.Details.HasErrors)
+          Console.WriteLine("  Support 1 ID: " + resp.Data.Value.ToString());
+      }
+      {
+        ElementRigidPunctualSupport support = new ElementRigidPunctualSupport
+        {
+          GeomPt = new Pt3D { X = 29.0, Y = 0.0, Z = 0.0 },
+          //Restraints = new DegreeOfFreedomRestraints { Tx = true, Ty = true, Tz = true, Rx = true, Ry = true, Rz = true },
+          Material = respMaterialConcrete.Data // Assign concrete material to supports
+        };
+        var resp = client.CreateElement(support);
+        Console.WriteLine($"Create rigid support 2: Success={resp.Details.Success}, HasErrors={resp.Details.HasErrors}, Diagnostics={DiagText(resp.Details.Diagnostics)}");
+        if (resp.Details.Success && !resp.Details.HasErrors)
+          Console.WriteLine("  Support 2 ID: " + resp.Data.Value.ToString());
+      }
+
+      // Create Wind CBN family load case
+      {
+        LoadCaseFamily_WindCBN windFamily = new LoadCaseFamily_WindCBN
+        {
+          Name = "Wind CBN family",
+          Building2D = new Building2DParametersWindCBN
+          {
+            BuildingLength = 30.0,
+            PortalPosition = 5.0,
+            OpeningPosition = PortalOpeningPosition_Wind.CG_WINDEC1_OPENING2D_NONE,
+
+            // EWind2DRealLoadsInSpan -> this transfers the load from the span to the linear element (LoadSpanFront and LoadSpanBehind can be set in the LoadAreaLoadTransferProperties on each linear element)
+            //https://graitec.com/uk/resources/technical-support/documentation/advance-design-technical-articles/climatic-loads-generator-advance-design/
+            Wind2DLoadsDeterminationMethod = Wind2DLoadsDeterminationMethod_Wind_EN1991_1_4_API.EWind2DRealLoadsInSpan
+          },
+          AutoGeneration = new AutoGenerationParametersWindCBN
+          {
+            WindWallStatus = true,
+            PressureCoeff = true,
+            SplitWindWalls = false,
+            LoadGeneration = true
+          },
+          BasePressure = new BasePressureParametersWindCBN
+          { 
+            ZoneHash = " ",
+            Pressure = 420.0,
+            ImportanceFactorIE = ImportanceFactorIE_SnowCBN_API.SNOWCBNSn2010_IE_NORMAL,
+            CeMode = CeMode_WindCBN_API.WindCBNWd2010_CE_C_MANUAL,
+            Ce = 1.0,
+            Cei = 1.0,
+            Cg = 2.5,
+            Cgi = 2.0,
+            Ct = 1.0,
+            HeightOfStructureBase = 0.0,
+            ExternalPressureArticleUsedForLowBuildings = ExternalPressureArticle_WindCBN_API.Cp_zones_cornersenvelope_using_4_1_7_6__2 //add+(3 entry
+          }
+        };
+        var resp = client.CreateInformationalElement(windFamily);
+        Console.WriteLine($"Create Wind CBN family: Success={resp.Details.Success}, HasErrors={resp.Details.HasErrors}, Diagnostics={DiagText(resp.Details.Diagnostics)}");
+        if (resp.Details.Success && !resp.Details.HasErrors)
+          Console.WriteLine("  Wind CBN family ID: " + resp.Data.Value.ToString());
+      }
+
+      // Create Snow CBN family load case
+      {
+        LoadCaseFamily_SnowCBN snowFamily = new LoadCaseFamily_SnowCBN
+        {
+          Name = "Snow CBN family",
+          Implantation = new ImplantationSnowCBN
+          {
+            Zone = "",
+            ZoneHash = " ",
+            Ss50 = 2600.0,
+            Sr50 = 400.0,
+            Cw = WindExposureCw_SnowCBN_API.SNOWCBNSn2010_CW_1,
+            ImportanceFactorIE = ImportanceFactorIE_SnowCBN_API.SNOWCBNSn2010_IE_NORMAL
+          },
+          Building2D = new Building2DSnowCBN
+          {
+            BuildingLength = 30.0,
+            PortalPosition = 5.0
+          }
+        };
+        var resp = client.CreateInformationalElement(snowFamily);
+        Console.WriteLine($"Create Snow CBN family: Success={resp.Details.Success}, HasErrors={resp.Details.HasErrors}, Diagnostics={DiagText(resp.Details.Diagnostics)}");
+        if (resp.Details.Success && !resp.Details.HasErrors)
+          Console.WriteLine("  Snow CBN family ID: " + resp.Data.Value.ToString());
+      }
+
+      Console.WriteLine("Setup completed (sturcture modedelization), now running climatic auto generation... Press any key to continue");
+      //Console.ReadLine();
+      // Run climatic auto generation
+      {
+        var resp = client.ProcessAction(AD_API_ActionType.ClimaticAutoGeneration, null);
+        PrintResultDetails(resp.Details, logVerbosityLevel, "ProcessAction(AD_API_ActionType.ClimaticAutoGeneration");
+        //Console.WriteLine($"ClimaticAutoGeneration: Success={resp.Details.Success}, HasErrors={resp.Details.HasErrors}, Data={resp.Data}, Diagnostics={DiagText(resp.Details.Diagnostics)}");
+        if (!resp.Details.Success || resp.Details.HasErrors)
+        {
+          SampleReport.Fatal("ERROR: ClimaticAutoGeneration failed check details above.");
+          Console.WriteLine("ERROR: ClimaticAutoGeneration failed check details above.");
+          client.CloseProject();
+          return;
+        }
+      }
+
+      // Read back loads from wind family load cases
+      {
+        var windFamilyQueries = new List<QueryBase>
+        {
+          new QueryInfoModel { InformationalElementType = InformationalElementTypeEnum.LoadCaseFamily_Wind }
+        };
+        var respWindFamilies = client.GetElementsID(windFamilyQueries);
+        Console.WriteLine($"GetElementsID (wind families): Success={respWindFamilies.Details.Success}, HasErrors={respWindFamilies.Details.HasErrors}, Diagnostics={DiagText(respWindFamilies.Details.Diagnostics)}");
+        if (respWindFamilies.Details.Success && !respWindFamilies.Details.HasErrors && respWindFamilies.Data != null && respWindFamilies.Data.Count > 0)
+        {
+          Console.WriteLine($"  Wind family load cases: received {respWindFamilies.Data.Count} families");
+
+          foreach (var famId in respWindFamilies.Data)
+          {
+            EID famEid = new EID { Value = famId };// or use directly the EID genertaed when calling resp = client.CreateInformationalElement(windFamily);
+            var windCaseQueries = new List<QueryBase>
+            {
+              new QueryInfoLoadCase { InformationalElementType = InformationalElementTypeEnum.LoadCase_Wind, CaseFamilyId = famEid }
+            };
+            var respWindCases = client.GetElementsID(windCaseQueries);
+            Console.WriteLine($"  GetElementsID (wind cases in family {famId}): Success={respWindCases.Details.Success}, HasErrors={respWindCases.Details.HasErrors}, Diagnostics={DiagText(respWindCases.Details.Diagnostics)}");
+            if (respWindCases.Details.Success && !respWindCases.Details.HasErrors && respWindCases.Data != null && respWindCases.Data.Count > 0)
+            {
+              Console.WriteLine($"    Wind family {famId}: {respWindCases.Data.Count} load cases");
+
+              foreach (var caseIdVal in respWindCases.Data)
+              {
+                EID lcId = new EID { Value = caseIdVal };
+
+                var lcObjects = client.GetInformationalElementsObject(new List<long> { caseIdVal });
+                PrintLoadCase(lcObjects.Data?.FirstOrDefault());
+
+                var loadQueries = new List<QueryBase>
+                {
+                  new QueryElementsLoads { ElementType = ElementTypeEnum.ElementLoadLinear, LoadCaseId = lcId },
+                  new QueryElementsLoads { ElementType = ElementTypeEnum.ElementLoadPunctual, LoadCaseId = lcId },
+                  new QueryElementsLoads { ElementType = ElementTypeEnum.ElementLoadPlanar, LoadCaseId = lcId }
+                };
+                var respLoadIds = client.GetElementsID(loadQueries);
+                Console.WriteLine($"    GetElementsID (loads in wind case {caseIdVal}): Success={respLoadIds.Details.Success}, HasErrors={respLoadIds.Details.HasErrors}, Diagnostics={DiagText(respLoadIds.Details.Diagnostics)}");
+                if (respLoadIds.Details.Success && !respLoadIds.Details.HasErrors && respLoadIds.Data != null && respLoadIds.Data.Count > 0)
+                {
+                  Console.WriteLine($"      Wind load case {caseIdVal}: {respLoadIds.Data.Count} loads found");
+
+                  var respObjects = client.GetElementsObject(respLoadIds.Data);
+                  Console.WriteLine($"      GetElementsObject: Success={respObjects.Details.Success}, HasErrors={respObjects.Details.HasErrors}, Diagnostics={DiagText(respObjects.Details.Diagnostics)}");
+                  if (respObjects.Details.Success && !respObjects.Details.HasErrors && respObjects.Data != null)
+                  {
+                    Console.WriteLine($"      Read {respObjects.Data.Count} load objects");
+                    foreach (var obj in respObjects.Data)
+                    {
+                      //Console.WriteLine($"        Load type: {obj.GetType().Name}");
+                      PrintLoad(obj);
+                    }
+                  }
+                }
+                else
+                {
+                  Console.WriteLine($"      Wind load case {caseIdVal}: no loads found");
+                }
+              }
+            }
+          }
+        }
+        else
+        {
+          Console.WriteLine("  No wind family load cases found");
+        }
+      }
+
+      // Read back loads from snow family load cases
+      {
+        var snowFamilyQueries = new List<QueryBase>
+        {
+          new QueryInfoModel { InformationalElementType = InformationalElementTypeEnum.LoadCaseFamily_Snow }
+        };
+        var respSnowFamilies = client.GetElementsID(snowFamilyQueries);
+        Console.WriteLine($"GetElementsID (snow families): Success={respSnowFamilies.Details.Success}, HasErrors={respSnowFamilies.Details.HasErrors}, Diagnostics={DiagText(respSnowFamilies.Details.Diagnostics)}");
+        if (respSnowFamilies.Details.Success && !respSnowFamilies.Details.HasErrors && respSnowFamilies.Data != null && respSnowFamilies.Data.Count > 0)
+        {
+          Console.WriteLine($"  Snow family load cases: received {respSnowFamilies.Data.Count} families");
+
+          foreach (var famId in respSnowFamilies.Data)
+          {
+            EID famEid = new EID { Value = famId };// or use directly the EID genertaed when calling resp = client.CreateInformationalElement(snowFamily);
+            var snowCaseQueries = new List<QueryBase>
+            {
+              new QueryInfoLoadCase { InformationalElementType = InformationalElementTypeEnum.LoadCase_Snow, CaseFamilyId = famEid }
+            };
+            var respSnowCases = client.GetElementsID(snowCaseQueries);
+            Console.WriteLine($"  GetElementsID (snow cases in family {famId}): Success={respSnowCases.Details.Success}, HasErrors={respSnowCases.Details.HasErrors}, Diagnostics={DiagText(respSnowCases.Details.Diagnostics)}");
+            if (respSnowCases.Details.Success && !respSnowCases.Details.HasErrors && respSnowCases.Data != null && respSnowCases.Data.Count > 0)
+            {
+              Console.WriteLine($"    Snow family {famId}: {respSnowCases.Data.Count} load cases");
+
+              foreach (var caseIdVal in respSnowCases.Data)
+              {
+                EID lcId = new EID { Value = caseIdVal };
+                var lcObjects = client.GetInformationalElementsObject(new List<long> { caseIdVal });
+                PrintLoadCase(lcObjects.Data?.FirstOrDefault());
+
+                var loadQueries = new List<QueryBase>
+                {
+                  new QueryElementsLoads { ElementType = ElementTypeEnum.ElementLoadLinear, LoadCaseId = lcId },
+                  new QueryElementsLoads { ElementType = ElementTypeEnum.ElementLoadPunctual, LoadCaseId = lcId },
+                  new QueryElementsLoads { ElementType = ElementTypeEnum.ElementLoadPlanar, LoadCaseId = lcId }
+                };
+                var respLoadIds = client.GetElementsID(loadQueries);
+                Console.WriteLine($"    GetElementsID (loads in snow case {caseIdVal}): Success={respLoadIds.Details.Success}, HasErrors={respLoadIds.Details.HasErrors}, Diagnostics={DiagText(respLoadIds.Details.Diagnostics)}");
+                if (respLoadIds.Details.Success && !respLoadIds.Details.HasErrors && respLoadIds.Data != null && respLoadIds.Data.Count > 0)
+                {
+                  Console.WriteLine($"      Snow load case {caseIdVal}: {respLoadIds.Data.Count} loads found");
+
+                  var respObjects = client.GetElementsObject(respLoadIds.Data);
+                  Console.WriteLine($"      GetElementsObject: Success={respObjects.Details.Success}, HasErrors={respObjects.Details.HasErrors}, Diagnostics={DiagText(respObjects.Details.Diagnostics)}");
+                  if (respObjects.Details.Success && !respObjects.Details.HasErrors && respObjects.Data != null)
+                  {
+                    Console.WriteLine($"      Read {respObjects.Data.Count} load objects");
+                    foreach (var obj in respObjects.Data)
+                    {
+                      //Console.WriteLine($"        Load type: {obj.GetType().Name}");
+                      PrintLoad(obj);
+                    }
+                  }
+                }
+                else
+                {
+                  Console.WriteLine($"      Snow load case {caseIdVal}: no loads found");
+                }
+              }
+            }
+          }
+        }
+        else
+        {
+          Console.WriteLine("  No snow family load cases found");
+        }
+      }
+
+      client.CloseProject();
+      Console.WriteLine("Sample_Portal2DStructureAndCLimaticGeneration_CanadaCBN: Close the project.");
+    }
+
 		/// <summary>
 		/// Portal structure example 2:
 		/// forming a portal frame with 2 rigid supports at the base. Creates IBC wind and snow family load cases,
@@ -419,6 +818,7 @@ namespace Test.API.Client
       string projectPath = GetEnvironmentVariable("AD_MODELS_PATH") ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Graitec", "Advance Design", "2027", "Projects") + Path.DirectorySeparatorChar;
       if (System.String.IsNullOrEmpty(projectPath))
       {
+        SampleReport.Fatal("ERROR: Environment variable 'AD_MODELS_PATH' is not set. Aborting.");
         Console.WriteLine("ERROR: Environment variable 'AD_MODELS_PATH' is not set. Aborting.");
         return;
       }
@@ -442,6 +842,7 @@ namespace Test.API.Client
       Console.WriteLine($"Create material S235: Success={respMaterialConcrete.Details.Success}, HasErrors={respMaterialConcrete.Details.HasErrors}, Diagnostics={DiagText(respMaterialConcrete.Details.Diagnostics)}");
       if (!respMaterialConcrete.Details.Success || respMaterialConcrete.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: CreateMaterial S235 failed. Aborting.");
         Console.WriteLine("ERROR: CreateMaterial S235 failed. Aborting.");
         client.CloseProject();
         return;
@@ -451,27 +852,27 @@ namespace Test.API.Client
       Material materialS235 = new Material { Name = "S235" };
       var respMaterialS235 = client.CreateMaterial(materialS235);
       Console.WriteLine($"Create material S235: Success={respMaterialS235.Details.Success}, HasErrors={respMaterialS235.Details.HasErrors}, Diagnostics={DiagText(respMaterialS235.Details.Diagnostics)}");
-      if (!respMaterialS235.Details.Success || respMaterialS235.Details.HasErrors) { Console.WriteLine("ERROR: CreateMaterial S235 failed. Aborting."); client.CloseProject(); return; }
+      if (!respMaterialS235.Details.Success || respMaterialS235.Details.HasErrors) { SampleReport.Fatal("ERROR: CreateMaterial S235 failed. Aborting."); Console.WriteLine("ERROR: CreateMaterial S235 failed. Aborting."); client.CloseProject(); return; }
       EID idMaterialS235 = respMaterialS235.Data;
       Console.WriteLine("  Material S235 OID: " + idMaterialS235.Value.ToString());
 
       Material materialC25 = new Material { Name = "C25/30" };
       var respMaterialC25 = client.CreateMaterial(materialC25);
       Console.WriteLine($"Create material C25/30: Success={respMaterialC25.Details.Success}, HasErrors={respMaterialC25.Details.HasErrors}, Diagnostics={DiagText(respMaterialC25.Details.Diagnostics)}");
-      if (!respMaterialC25.Details.Success || respMaterialC25.Details.HasErrors) { Console.WriteLine("ERROR: CreateMaterial C25/30 failed. Aborting."); client.CloseProject(); return; }
+      if (!respMaterialC25.Details.Success || respMaterialC25.Details.HasErrors) { SampleReport.Fatal("ERROR: CreateMaterial C25/30 failed. Aborting."); Console.WriteLine("ERROR: CreateMaterial C25/30 failed. Aborting."); client.CloseProject(); return; }
       EID idMaterialC25 = respMaterialC25.Data;
       Console.WriteLine("  Material C25/30 OID: " + idMaterialC25.Value.ToString());
 
       // Create sections
       var respSectionIPE400 = client.CreateSection("IPE400");
       Console.WriteLine($"Create section IPE400: Success={respSectionIPE400.Details.Success}, HasErrors={respSectionIPE400.Details.HasErrors}, Diagnostics={DiagText(respSectionIPE400.Details.Diagnostics)}");
-      if (!respSectionIPE400.Details.Success || respSectionIPE400.Details.HasErrors) { Console.WriteLine("ERROR: CreateSection IPE400 failed. Aborting."); client.CloseProject(); return; }
+      if (!respSectionIPE400.Details.Success || respSectionIPE400.Details.HasErrors) { SampleReport.Fatal("ERROR: CreateSection IPE400 failed. Aborting."); Console.WriteLine("ERROR: CreateSection IPE400 failed. Aborting."); client.CloseProject(); return; }
       EID idSectionIPE400 = respSectionIPE400.Data;
       Console.WriteLine("  Section IPE400 OID: " + idSectionIPE400.Value.ToString());
 
       var respSectionR20x30 = client.CreateSection("R20*30");
       Console.WriteLine($"Create section R20*30: Success={respSectionR20x30.Details.Success}, HasErrors={respSectionR20x30.Details.HasErrors}, Diagnostics={DiagText(respSectionR20x30.Details.Diagnostics)}");
-      if (!respSectionR20x30.Details.Success || respSectionR20x30.Details.HasErrors) { Console.WriteLine("ERROR: CreateSection R20*30 failed. Aborting."); client.CloseProject(); return; }
+      if (!respSectionR20x30.Details.Success || respSectionR20x30.Details.HasErrors) { SampleReport.Fatal("ERROR: CreateSection R20*30 failed. Aborting."); Console.WriteLine("ERROR: CreateSection R20*30 failed. Aborting."); client.CloseProject(); return; }
       EID idSectionR20x30 = respSectionR20x30.Data;
       Console.WriteLine("  Section R20*30 OID: " + idSectionR20x30.Value.ToString());
 
@@ -675,6 +1076,7 @@ namespace Test.API.Client
         //Console.WriteLine($"ClimaticAutoGeneration: Success={resp.Details.Success}, HasErrors={resp.Details.HasErrors}, Data={resp.Data}, Diagnostics={DiagText(resp.Details.Diagnostics)}");
         if (!resp.Details.Success || resp.Details.HasErrors)
         {
+          SampleReport.Fatal("ERROR: ClimaticAutoGeneration failed check details above.");
           Console.WriteLine("ERROR: ClimaticAutoGeneration failed check details above.");
           client.CloseProject();
           return;
@@ -859,6 +1261,7 @@ namespace Test.API.Client
       string projectPath = GetEnvironmentVariable("AD_MODELS_PATH") ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Graitec", "Advance Design", "2027", "Projects") + Path.DirectorySeparatorChar;
       if (System.String.IsNullOrEmpty(projectPath))
       {
+        SampleReport.Fatal("ERROR: Environment variable 'AD_MODELS_PATH' is not set. Aborting.");
         Console.WriteLine("ERROR: Environment variable 'AD_MODELS_PATH' is not set. Aborting.");
         return;
       }
@@ -872,6 +1275,7 @@ namespace Test.API.Client
       Console.WriteLine($"Create material C25/30: Success={respMaterialConcrete.Details.Success}, HasErrors={respMaterialConcrete.Details.HasErrors}, Diagnostics={DiagText(respMaterialConcrete.Details.Diagnostics)}");
       if (!respMaterialConcrete.Details.Success || respMaterialConcrete.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: CreateMaterial C25/30 failed. Aborting.");
         Console.WriteLine("ERROR: CreateMaterial C25/30 failed. Aborting.");
         client.CloseProject();
         return;
@@ -882,14 +1286,14 @@ namespace Test.API.Client
       Material materialS235 = new Material { Name = "S235" };
       var respMaterialS235 = client.CreateMaterial(materialS235);
       Console.WriteLine($"Create material S235: Success={respMaterialS235.Details.Success}, HasErrors={respMaterialS235.Details.HasErrors}, Diagnostics={DiagText(respMaterialS235.Details.Diagnostics)}");
-      if (!respMaterialS235.Details.Success || respMaterialS235.Details.HasErrors) { Console.WriteLine("ERROR: CreateMaterial S235 failed. Aborting."); client.CloseProject(); return; }
+      if (!respMaterialS235.Details.Success || respMaterialS235.Details.HasErrors) { SampleReport.Fatal("ERROR: CreateMaterial S235 failed. Aborting."); Console.WriteLine("ERROR: CreateMaterial S235 failed. Aborting."); client.CloseProject(); return; }
       EID idMaterialS235 = respMaterialS235.Data;
       Console.WriteLine("  Material S235 OID: " + idMaterialS235.Value.ToString());
      
       // Create sections
       var respSectionIPE400 = client.CreateSection("IPE400");
       Console.WriteLine($"Create section IPE400: Success={respSectionIPE400.Details.Success}, HasErrors={respSectionIPE400.Details.HasErrors}, Diagnostics={DiagText(respSectionIPE400.Details.Diagnostics)}");
-      if (!respSectionIPE400.Details.Success || respSectionIPE400.Details.HasErrors) { Console.WriteLine("ERROR: CreateSection IPE400 failed. Aborting."); client.CloseProject(); return; }
+      if (!respSectionIPE400.Details.Success || respSectionIPE400.Details.HasErrors) { SampleReport.Fatal("ERROR: CreateSection IPE400 failed. Aborting."); Console.WriteLine("ERROR: CreateSection IPE400 failed. Aborting."); client.CloseProject(); return; }
       EID idSectionIPE400 = respSectionIPE400.Data;
       Console.WriteLine("  Section IPE400 OID: " + idSectionIPE400.Value.ToString());
 
@@ -898,6 +1302,7 @@ namespace Test.API.Client
       Console.WriteLine($"Create section R20*30: Success={respSectionR20x30.Details.Success}, HasErrors={respSectionR20x30.Details.HasErrors}, Diagnostics={DiagText(respSectionR20x30.Details.Diagnostics)}");
       if (!respSectionR20x30.Details.Success || respSectionR20x30.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: CreateSection R20*30 failed. Aborting.");
         Console.WriteLine("ERROR: CreateSection R20*30 failed. Aborting.");
         client.CloseProject();
         return;
@@ -1110,6 +1515,7 @@ namespace Test.API.Client
         PrintResultDetails(resp.Details, logVerbosityLevel, "ProcessAction(AD_API_ActionType.ClimaticAutoGeneration)");
         if (!resp.Details.Success || resp.Details.HasErrors)
         {
+          SampleReport.Fatal("ERROR: ClimaticAutoGeneration failed. Check details above.");
           Console.WriteLine("ERROR: ClimaticAutoGeneration failed. Check details above.");
           client.CloseProject();
           return;

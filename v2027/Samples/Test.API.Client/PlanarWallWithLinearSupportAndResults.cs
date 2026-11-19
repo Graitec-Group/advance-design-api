@@ -38,6 +38,7 @@ namespace Test.API.Client
 			string projectPath = GetEnvironmentVariable("AD_MODELS_PATH") ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Graitec", "Advance Design", "2027", "Projects") + Path.DirectorySeparatorChar;
 			if (System.String.IsNullOrEmpty(projectPath))
 			{
+				SampleReport.Fatal("ERROR: Environment variable 'AD_MODELS_PATH' is not set. Aborting.");
 				Console.WriteLine("ERROR: Environment variable 'AD_MODELS_PATH' is not set. Aborting.");
 				return;
 			}
@@ -188,6 +189,7 @@ namespace Test.API.Client
       // --- Launch analysis ---
       bool bCalculResult = client.LaunchAnalysis().Data;
 			Console.WriteLine("Launch calculation result: " + ((bCalculResult) ? "succeeded" : "failed"));
+			SampleReport.Check(bCalculResult, "LaunchAnalysis", "the analysis did not complete successfully");
 
 			if (bCalculResult)
 			{

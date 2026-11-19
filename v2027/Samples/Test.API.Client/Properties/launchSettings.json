@@ -1,12 +1,16 @@
 {
   "profiles": {
-    "Test.API.Client": {
+    "Sample Runner (GUI)": {
       "commandName": "Project",
-      "environmentVariables": {
-        "AD_API_SERVER_BINARY_PATH": "C:\\Program Files\\Graitec\\Advance Design\\2027\\Bin\\",
-        "AD_MODELS_PATH": "C:\\ProgramData\\Graitec\\Advance Design\\2027\\Projects\\",
-        "AD_API_SERVER_URL": "http://localhost:52000/"
-      }
+      "commandLineArgs": "--gui"
+    },
+    "Console menu": {
+      "commandName": "Project",
+      "commandLineArgs": "--console"
+    },
+    "Batch run - all samples": {
+      "commandName": "Project",
+      "commandLineArgs": "--run-all --report ad-api-samples.xml"
     }
   }
 }

@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "Test.API.Client": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "AD_API_SERVER_BINARY_PATH": "C:\\Program Files\\Graitec\\Advance Design\\2027\\Bin\\",
+        "AD_MODELS_PATH": "C:\\ProgramData\\Graitec\\Advance Design\\2027\\Projects\\",
+        "AD_API_SERVER_URL": "http://localhost:52000/"
+      }
+    }
+  }
+}

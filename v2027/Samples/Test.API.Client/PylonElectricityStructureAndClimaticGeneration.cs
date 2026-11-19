@@ -44,6 +44,7 @@ namespace Test.API.Client
       PrintResultDetails(newProj.Details, logVerbosityLevel, "Create new project");
       if (!newProj.Details.Success || newProj.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: NewProject failed. Aborting.");
         Console.WriteLine("ERROR: NewProject failed. Aborting.");
         return;
       }
@@ -57,6 +58,7 @@ namespace Test.API.Client
       PrintResultDetails(respMat.Details, logVerbosityLevel, "Create material S355");
       if (!respMat.Details.Success || respMat.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: CreateMaterial S355 failed. Aborting.");
         Console.WriteLine("ERROR: CreateMaterial S355 failed. Aborting.");
         client.CloseProject();
         return;
@@ -86,6 +88,7 @@ namespace Test.API.Client
         PrintResultDetails(respSec.Details, logVerbosityLevel, $"Create section {sectionName}");
         if (!respSec.Details.Success || respSec.Details.HasErrors)
         {
+          SampleReport.Fatal($"ERROR: CreateSection {sectionName} failed. Aborting.");
           Console.WriteLine($"ERROR: CreateSection {sectionName} failed. Aborting.");
           client.CloseProject();
           return;
@@ -589,6 +592,7 @@ namespace Test.API.Client
         PrintResultDetails(respEl.Details, logVerbosityLevel, $"Create linear element {data.Id}");
         if (!respEl.Details.Success || respEl.Details.HasErrors)
         {
+          SampleReport.Fatal($"ERROR: CreateElement {data.Id} failed. Aborting.");
           Console.WriteLine($"ERROR: CreateElement {data.Id} failed. Aborting.");
           client.CloseProject();
           return;
@@ -622,6 +626,7 @@ namespace Test.API.Client
           $"Create support at ({pt.X},{pt.Y},{pt.Z})");
         if (!respSupport.Details.Success || respSupport.Details.HasErrors)
         {
+          SampleReport.Fatal($"ERROR: CreateElement support at ({pt.X},{pt.Y},{pt.Z}) failed. Aborting.");
           Console.WriteLine($"ERROR: CreateElement support at ({pt.X},{pt.Y},{pt.Z}) failed. Aborting.");
           client.CloseProject();
           return;
@@ -643,6 +648,7 @@ namespace Test.API.Client
       PrintResultDetails(respLiveFamily.Details, logVerbosityLevel, "Create live load case family");
       if (!respLiveFamily.Details.Success || respLiveFamily.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: CreateInformationalElement live family failed. Aborting.");
         Console.WriteLine("ERROR: CreateInformationalElement live family failed. Aborting.");
         client.CloseProject();
         return;
@@ -664,6 +670,7 @@ namespace Test.API.Client
       PrintResultDetails(respLiveCase.Details, logVerbosityLevel, "Create live load case");
       if (!respLiveCase.Details.Success || respLiveCase.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: CreateInformationalElement live case failed. Aborting.");
         Console.WriteLine("ERROR: CreateInformationalElement live case failed. Aborting.");
         client.CloseProject();
         return;
@@ -797,6 +804,7 @@ namespace Test.API.Client
         PrintResultDetails(respLA.Details, logVerbosityLevel, $"Create load area {i + 1}");
         if (!respLA.Details.Success || respLA.Details.HasErrors)
         {
+          SampleReport.Fatal($"ERROR: CreateElement load area {i + 1} failed. Aborting.");
           Console.WriteLine($"ERROR: CreateElement load area {i + 1} failed. Aborting.");
           client.CloseProject();
           return;
@@ -851,6 +859,7 @@ namespace Test.API.Client
           $"Create point load at ({x},{y},{z}) Fx={fx} Fy={fy} Fz={fz}");
         if (!respLoad.Details.Success || respLoad.Details.HasErrors)
         {
+          SampleReport.Fatal($"ERROR: CreateElement point load at ({x},{y},{z}) failed. Aborting.");
           Console.WriteLine($"ERROR: CreateElement point load at ({x},{y},{z}) failed. Aborting.");
           client.CloseProject();
           return;
@@ -928,6 +937,7 @@ namespace Test.API.Client
       PrintResultDetails(respWindFamily.Details, logVerbosityLevel, "Create EN 1991-1-4 wind family");
       if (!respWindFamily.Details.Success || respWindFamily.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: CreateInformationalElement wind family failed. Aborting.");
         Console.WriteLine("ERROR: CreateInformationalElement wind family failed. Aborting.");
         client.CloseProject();
         return;
@@ -1007,6 +1017,7 @@ namespace Test.API.Client
                   && respLoadIds.Data != null && respLoadIds.Data.Count > 0)
               {
                 Console.ForegroundColor = ConsoleColor.Green;
+                SampleReport.Pass($"      Wind load case {caseIdVal}: {respLoadIds.Data.Count} load(s) found.");
                 Console.WriteLine($"      Wind load case {caseIdVal}: {respLoadIds.Data.Count} load(s) found.");
                 Console.ForegroundColor = ConsoleColor.White;
                 var swLoadObjs = Stopwatch.StartNew();
@@ -1026,6 +1037,7 @@ namespace Test.API.Client
               else
               {
                 Console.ForegroundColor = ConsoleColor.Red;
+                SampleReport.Fail($"      Wind load case {caseIdVal}: no loads found.");
                 Console.WriteLine($"      Wind load case {caseIdVal}: no loads found.");
                 Console.ForegroundColor = ConsoleColor.White;
               }
@@ -1034,6 +1046,7 @@ namespace Test.API.Client
           else
           {
             Console.ForegroundColor = ConsoleColor.Red;
+            SampleReport.Fail($"    Wind family {famId}: no load cases found after auto-generation.");
             Console.WriteLine($"    Wind family {famId}: no load cases found after auto-generation.");
             Console.ForegroundColor = ConsoleColor.White;
           }
@@ -1042,6 +1055,7 @@ namespace Test.API.Client
       else
       {
         Console.ForegroundColor = ConsoleColor.Red;
+        SampleReport.Fail("  No wind families found after ClimaticAutoGeneration.");
         Console.WriteLine("  No wind families found after ClimaticAutoGeneration.");
         Console.ForegroundColor = ConsoleColor.White;
       }

@@ -29,6 +29,7 @@ namespace Test.API.Client
 
       if (string.IsNullOrEmpty(projectPath))
       {
+        SampleReport.Fatal("ERROR: Environment variable 'AD_MODELS_PATH' is not set. Aborting.");
         Console.WriteLine("ERROR: Environment variable 'AD_MODELS_PATH' is not set. Aborting.");
         return;
       }
@@ -38,6 +39,7 @@ namespace Test.API.Client
       PrintResultDetails(newProj.Details, logVerbosityLevel, "Create new project");
       if (!newProj.Details.Success || newProj.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: NewProject failed. Aborting.");
         Console.WriteLine("ERROR: NewProject failed. Aborting.");
         return;
       }
@@ -47,6 +49,7 @@ namespace Test.API.Client
       PrintResultDetails(respMaterial.Details, logVerbosityLevel, "Create material C25/30");
       if (!respMaterial.Details.Success || respMaterial.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: CreateMaterial C25/30 failed. Aborting.");
         Console.WriteLine("ERROR: CreateMaterial C25/30 failed. Aborting.");
         client.CloseProject();
         return;
@@ -59,6 +62,7 @@ namespace Test.API.Client
       PrintResultDetails(respSection.Details, logVerbosityLevel, "Create section R20*30");
       if (!respSection.Details.Success || respSection.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: CreateSection R20*30 failed. Aborting.");
         Console.WriteLine("ERROR: CreateSection R20*30 failed. Aborting.");
         client.CloseProject();
         return;
@@ -181,9 +185,12 @@ namespace Test.API.Client
       PrintResultDetails(respAnalysis.Details, logVerbosityLevel, "Launch analysis");
       bool analysisOk = respAnalysis.Data;
       Console.WriteLine("  Analysis result: " + (analysisOk ? "succeeded" : "FAILED"));
+      if (analysisOk)
+        SampleReport.Pass("LaunchAnalysis");
 
       if (!analysisOk)
       {
+        SampleReport.Fatal("ERROR: Analysis failed. Cannot retrieve results.");
         Console.WriteLine("ERROR: Analysis failed. Cannot retrieve results.");
         client.CloseProject();
         return;
@@ -337,11 +344,13 @@ namespace Test.API.Client
         Console.WriteLine();
         if (verified)
         {
+          SampleReport.Pass("Displacement on element 2 is ~3 cm");
           Console.ForegroundColor = ConsoleColor.Green;
           Console.WriteLine("  VERIFICATION PASSED: displacement on element 2 is ~3 cm as expected.");
         }
         else
         {
+          SampleReport.Fail("Displacement on element 2 is ~3 cm", "no result confirmed the expected displacement");
           Console.ForegroundColor = ConsoleColor.Red;
           Console.WriteLine("  VERIFICATION WARNING: no result confirmed ~3 cm displacement. Check results above.");
         }        

@@ -35,6 +35,7 @@ namespace Test.API.Client
       PrintResultDetails(newProj.Details, logVerbosityLevel, "Create new project");
       if (!newProj.Details.Success || newProj.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: NewProject failed. Aborting.");
         Console.WriteLine("ERROR: NewProject failed. Aborting.");
         return;
       }
@@ -44,6 +45,7 @@ namespace Test.API.Client
       PrintResultDetails(respMat.Details, logVerbosityLevel, "Create material S275");
       if (!respMat.Details.Success || respMat.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: CreateMaterial S275 failed. Aborting.");
         Console.WriteLine("ERROR: CreateMaterial S275 failed. Aborting.");
         client.CloseProject();
         return;
@@ -71,6 +73,7 @@ namespace Test.API.Client
         PrintResultDetails(respSec.Details, logVerbosityLevel, $"Create section {sectionName}");
         if (!respSec.Details.Success || respSec.Details.HasErrors)
         {
+          SampleReport.Fatal($"ERROR: CreateSection {sectionName} failed. Aborting.");
           Console.WriteLine($"ERROR: CreateSection {sectionName} failed. Aborting.");
           client.CloseProject();
           return;
@@ -255,6 +258,7 @@ namespace Test.API.Client
         PrintResultDetails(resp.Details, logVerbosityLevel, $"Create linear element {elementCount} ({section})");
         if (!resp.Details.Success || resp.Details.HasErrors)
         {
+          SampleReport.Fatal($"ERROR: CreateElement linear {elementCount} ({section}) failed. Aborting.");
           Console.WriteLine($"ERROR: CreateElement linear {elementCount} ({section}) failed. Aborting.");
           client.CloseProject();
           return;
@@ -296,6 +300,7 @@ namespace Test.API.Client
         {
           GeomPt     = new Pt3D { X = sx, Y = sy, Z = sz },
           Material   = idMaterialS275,
+          ConstraintsType = RigidSupportConstraint.SupportHinge,
           Restraints = new DegreeOfFreedomRestraints
           {
             Tx = true, Ty = true, Tz = true,
@@ -307,6 +312,7 @@ namespace Test.API.Client
         PrintResultDetails(resp.Details, logVerbosityLevel, $"Create rigid support {supportCount} at ({sx},{sy},{sz})");
         if (!resp.Details.Success || resp.Details.HasErrors)
         {
+          SampleReport.Fatal($"ERROR: CreateElement rigid support {supportCount} at ({sx},{sy},{sz}) failed. Aborting.");
           Console.WriteLine($"ERROR: CreateElement rigid support {supportCount} at ({sx},{sy},{sz}) failed. Aborting.");
           client.CloseProject();
           return;
@@ -412,6 +418,7 @@ namespace Test.API.Client
         PrintResultDetails(respLA.Details, logVerbosityLevel, $"Create load area {loadAreaCount} ({laType})");
         if (!respLA.Details.Success || respLA.Details.HasErrors)
         {
+          SampleReport.Fatal($"ERROR: CreateElement load area {loadAreaCount} failed. Aborting.");
           Console.WriteLine($"ERROR: CreateElement load area {loadAreaCount} failed. Aborting.");
           client.CloseProject();
           return;
@@ -464,6 +471,7 @@ namespace Test.API.Client
       PrintResultDetails(respWindFamily.Details, logVerbosityLevel, "Create EN 1991-1-4 wind family");
       if (!respWindFamily.Details.Success || respWindFamily.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: CreateInformationalElement wind family failed. Aborting.");
         Console.WriteLine("ERROR: CreateInformationalElement wind family failed. Aborting.");
         client.CloseProject();
         return;
@@ -508,6 +516,7 @@ namespace Test.API.Client
       PrintResultDetails(respSnowFamily.Details, logVerbosityLevel, "Create EN 1991-1-3 snow family");
       if (!respSnowFamily.Details.Success || respSnowFamily.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: CreateInformationalElement snow family failed. Aborting.");
         Console.WriteLine("ERROR: CreateInformationalElement snow family failed. Aborting.");
         client.CloseProject();
         return;
@@ -568,6 +577,7 @@ namespace Test.API.Client
                   && respLoadIds.Data != null && respLoadIds.Data.Count > 0)
               {
                 Console.ForegroundColor = ConsoleColor.Green;
+                SampleReport.Pass($"      Wind load case {caseIdVal}: {respLoadIds.Data.Count} load(s) found.");
                 Console.WriteLine($"      Wind load case {caseIdVal}: {respLoadIds.Data.Count} load(s) found.");
                 Console.ForegroundColor = ConsoleColor.White;
                 var respObjects = client.GetElementsObject(respLoadIds.Data);
@@ -582,6 +592,7 @@ namespace Test.API.Client
               else
               {
                 Console.ForegroundColor = ConsoleColor.Red;
+                SampleReport.Fail($"      Wind load case {caseIdVal}: no loads found.");
                 Console.WriteLine($"      Wind load case {caseIdVal}: no loads found.");
                 Console.ForegroundColor = ConsoleColor.White;
               }
@@ -590,6 +601,7 @@ namespace Test.API.Client
           else
           {
             Console.ForegroundColor = ConsoleColor.Red;
+            SampleReport.Fail($"    Wind family {famId}: no load cases found after auto-generation.");
             Console.WriteLine($"    Wind family {famId}: no load cases found after auto-generation.");
             Console.ForegroundColor = ConsoleColor.White;
           }
@@ -598,6 +610,7 @@ namespace Test.API.Client
       else
       {
         Console.ForegroundColor = ConsoleColor.Red;
+        SampleReport.Fail("  No wind families found after ClimaticAutoGeneration.");
         Console.WriteLine("  No wind families found after ClimaticAutoGeneration.");
         Console.ForegroundColor = ConsoleColor.White;
       }
@@ -647,6 +660,7 @@ namespace Test.API.Client
                   && respLoadIds.Data != null && respLoadIds.Data.Count > 0)
               {
                 Console.ForegroundColor = ConsoleColor.Green;
+                SampleReport.Pass($"      Snow load case {caseIdVal}: {respLoadIds.Data.Count} load(s) found.");
                 Console.WriteLine($"      Snow load case {caseIdVal}: {respLoadIds.Data.Count} load(s) found.");
                 Console.ForegroundColor = ConsoleColor.White;
                 var respObjects = client.GetElementsObject(respLoadIds.Data);
@@ -661,6 +675,7 @@ namespace Test.API.Client
               else
               {
                 Console.ForegroundColor = ConsoleColor.Red;
+                SampleReport.Fail($"      Snow load case {caseIdVal}: no loads found.");
                 Console.WriteLine($"      Snow load case {caseIdVal}: no loads found.");
                 Console.ForegroundColor = ConsoleColor.White;
               }
@@ -669,6 +684,7 @@ namespace Test.API.Client
           else
           {
             Console.ForegroundColor = ConsoleColor.Red;
+            SampleReport.Fail($"    Snow family {famId}: no load cases found after auto-generation.");
             Console.WriteLine($"    Snow family {famId}: no load cases found after auto-generation.");
             Console.ForegroundColor = ConsoleColor.White;
           }
@@ -677,6 +693,7 @@ namespace Test.API.Client
       else
       {
         Console.ForegroundColor = ConsoleColor.Red;
+        SampleReport.Fail("  No snow families found after ClimaticAutoGeneration.");
         Console.WriteLine("  No snow families found after ClimaticAutoGeneration.");
         Console.ForegroundColor = ConsoleColor.White;
       }

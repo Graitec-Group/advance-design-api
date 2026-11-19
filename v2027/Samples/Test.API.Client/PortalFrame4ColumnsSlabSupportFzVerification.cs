@@ -38,6 +38,7 @@ namespace Test.API.Client
       PrintResultDetails(newProj.Details, logVerbosityLevel, "Create new project");
       if (!newProj.Details.Success || newProj.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: NewProject failed. Aborting.");
         Console.WriteLine("ERROR: NewProject failed. Aborting.");
         return;
       }
@@ -46,6 +47,7 @@ namespace Test.API.Client
       PrintResultDetails(respMaterial.Details, logVerbosityLevel, "Create material C25/30");
       if (!respMaterial.Details.Success || respMaterial.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: CreateMaterial C25/30 failed. Aborting.");
         Console.WriteLine("ERROR: CreateMaterial C25/30 failed. Aborting.");
         client.CloseProject();
         return;
@@ -57,6 +59,7 @@ namespace Test.API.Client
       PrintResultDetails(respSection.Details, logVerbosityLevel, "Create section R20*30");
       if (!respSection.Details.Success || respSection.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: CreateSection R20*30 failed. Aborting.");
         Console.WriteLine("ERROR: CreateSection R20*30 failed. Aborting.");
         client.CloseProject();
         return;
@@ -86,6 +89,7 @@ namespace Test.API.Client
         PrintResultDetails(resp.Details, logVerbosityLevel, $"Create {column.Label} ({FormatPoint(column.Start)}→{FormatPoint(column.End)})");
         if (!resp.Details.Success || resp.Details.HasErrors)
         {
+          SampleReport.Fatal($"ERROR: CreateElement for {column.Label} failed. Aborting.");
           Console.WriteLine($"ERROR: CreateElement for {column.Label} failed. Aborting.");
           client.CloseProject();
           return;
@@ -114,6 +118,7 @@ namespace Test.API.Client
       PrintResultDetails(respSlab.Details, logVerbosityLevel, "Create planar slab element (10m x 11m, thickness 0.20m)");
       if (!respSlab.Details.Success || respSlab.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: CreateElement for planar slab failed. Aborting.");
         Console.WriteLine("ERROR: CreateElement for planar slab failed. Aborting.");
         client.CloseProject();
         return;
@@ -149,6 +154,7 @@ namespace Test.API.Client
         PrintResultDetails(resp.Details, logVerbosityLevel, $"Create {supportPoint.Label} at {FormatPoint(supportPoint.Point)}");
         if (!resp.Details.Success || resp.Details.HasErrors)
         {
+          SampleReport.Fatal($"ERROR: CreateElement for {supportPoint.Label} failed. Aborting.");
           Console.WriteLine($"ERROR: CreateElement for {supportPoint.Label} failed. Aborting.");
           client.CloseProject();
           return;
@@ -162,6 +168,7 @@ namespace Test.API.Client
       PrintResultDetails(respLiveFamily.Details, logVerbosityLevel, "Create live loads family");
       if (!respLiveFamily.Details.Success || respLiveFamily.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: CreateInformationalElement for live loads family failed. Aborting.");
         Console.WriteLine("ERROR: CreateInformationalElement for live loads family failed. Aborting.");
         client.CloseProject();
         return;
@@ -178,6 +185,7 @@ namespace Test.API.Client
       PrintResultDetails(respLiveCase.Details, logVerbosityLevel, "Create live load case");
       if (!respLiveCase.Details.Success || respLiveCase.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: CreateInformationalElement for live load case failed. Aborting.");
         Console.WriteLine("ERROR: CreateInformationalElement for live load case failed. Aborting.");
         client.CloseProject();
         return;
@@ -210,6 +218,7 @@ namespace Test.API.Client
       PrintResultDetails(respPlanarLoad.Details, logVerbosityLevel, "Create planar live load Fz=-30kN/m² on slab");
       if (!respPlanarLoad.Details.Success || respPlanarLoad.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: CreateElement for planar load failed. Aborting.");
         Console.WriteLine("ERROR: CreateElement for planar load failed. Aborting.");
         client.CloseProject();
         return;
@@ -220,6 +229,7 @@ namespace Test.API.Client
       PrintResultDetails(respDeadFamily.Details, logVerbosityLevel, "Create dead loads family");
       if (!respDeadFamily.Details.Success || respDeadFamily.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: CreateInformationalElement for dead loads family failed. Aborting.");
         Console.WriteLine("ERROR: CreateInformationalElement for dead loads family failed. Aborting.");
         client.CloseProject();
         return;
@@ -235,6 +245,7 @@ namespace Test.API.Client
       PrintResultDetails(respDeadCase.Details, logVerbosityLevel, "Create dead load case");
       if (!respDeadCase.Details.Success || respDeadCase.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: CreateInformationalElement for dead load case failed. Aborting.");
         Console.WriteLine("ERROR: CreateInformationalElement for dead load case failed. Aborting.");
         client.CloseProject();
         return;
@@ -246,6 +257,7 @@ namespace Test.API.Client
       PrintResultDetails(respAnalysis.Details, logVerbosityLevel, "Launch analysis");
       if (!respAnalysis.Data)
       {
+        SampleReport.Fatal("ERROR: Analysis failed. Cannot retrieve support results.");
         Console.WriteLine("ERROR: Analysis failed. Cannot retrieve support results.");
         client.CloseProject();
         return;
@@ -296,6 +308,7 @@ namespace Test.API.Client
       Console.WriteLine($"  1% tolerance band = {absoluteExpected * relativeTolerance:F3} N");
 
       Console.ForegroundColor = verificationPassed ? ConsoleColor.Green : ConsoleColor.Red;
+      SampleReport.Check(verificationPassed, "Sum of support Fz matches the applied load", signConventionMessage);
       Console.WriteLine($"  VERIFICATION {(verificationPassed ? "TRUE" : "FALSE")}: {signConventionMessage}");
       Console.ForegroundColor = ConsoleColor.White;
 

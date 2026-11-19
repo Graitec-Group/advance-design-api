@@ -32,6 +32,7 @@ namespace Test.API.Client
 
       if (string.IsNullOrEmpty(projectPath))
       {
+        SampleReport.Fatal("ERROR: Environment variable 'AD_MODELS_PATH' is not set. Aborting.");
         Console.WriteLine("ERROR: Environment variable 'AD_MODELS_PATH' is not set. Aborting.");
         return;
       }
@@ -41,6 +42,7 @@ namespace Test.API.Client
       PrintResultDetails(respNewProj.Details, logVerbosityLevel, "NewProject");
       if (!respNewProj.Details.Success || respNewProj.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: NewProject failed. Aborting.");
         Console.WriteLine("ERROR: NewProject failed. Aborting.");
         return;
       }
@@ -50,6 +52,7 @@ namespace Test.API.Client
       PrintResultDetails(respMaterialSteel.Details, logVerbosityLevel, "CreateMaterial S235");
       if (!respMaterialSteel.Details.Success || respMaterialSteel.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: CreateMaterial S235 failed. Aborting.");
         Console.WriteLine("ERROR: CreateMaterial S235 failed. Aborting.");
         client.CloseProject();
         return;
@@ -60,6 +63,7 @@ namespace Test.API.Client
       PrintResultDetails(respMaterialConcrete.Details, logVerbosityLevel, "CreateMaterial C25/30");
       if (!respMaterialConcrete.Details.Success || respMaterialConcrete.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: CreateMaterial C25/30 failed. Aborting.");
         Console.WriteLine("ERROR: CreateMaterial C25/30 failed. Aborting.");
         client.CloseProject();
         return;
@@ -71,6 +75,7 @@ namespace Test.API.Client
       PrintResultDetails(respSection.Details, logVerbosityLevel, "CreateSection IPE400");
       if (!respSection.Details.Success || respSection.Details.HasErrors)
       {
+        SampleReport.Fatal("ERROR: CreateSection IPE400 failed. Aborting.");
         Console.WriteLine("ERROR: CreateSection IPE400 failed. Aborting.");
         client.CloseProject();
         return;

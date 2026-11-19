@@ -22,8 +22,8 @@ namespace Test.API.Client
 	/// - Dead load case (default, no explicit loads)
 	/// - Live load case with 1 planar load:
 	///     geometry: (5,0,0) (5,3,0) (0,3,0) (0,0,0)
-	///     force: Fx=-10000, Fy=25000, Fz=-60000 [N/m²], moment=0
-	/// - ULS combination (StrGeo): 1.0 × Dead + 1.5 × Live
+	///     force: Fx=-10000, Fy=25000, Fz=-60000 [N/mÂ²], moment=0
+	/// - ULS combination (StrGeo): 1.0 Ã— Dead + 1.5 Ã— Live
 	/// - Analysis + results retrieval for the planar support
 	/// </summary>
 	internal partial class Program
@@ -38,6 +38,7 @@ namespace Test.API.Client
 			string projectPath = GetEnvironmentVariable("AD_MODELS_PATH") ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Graitec", "Advance Design", "2027", "Projects") + Path.DirectorySeparatorChar;
 			if (System.String.IsNullOrEmpty(projectPath))
 			{
+				SampleReport.Fatal("ERROR: Environment variable 'AD_MODELS_PATH' is not set. Aborting.");
 				Console.WriteLine("ERROR: Environment variable 'AD_MODELS_PATH' is not set. Aborting.");
 				return;
 			}
@@ -127,7 +128,7 @@ namespace Test.API.Client
 			}
 
 			// --- Planar load on the live load case ---
-			// Geometry: same as support/element, Force: Fx=-10000, Fy=25000, Fz=-60000 [N/m²], Moment=0
+			// Geometry: same as support/element, Force: Fx=-10000, Fy=25000, Fz=-60000 [N/mÂ²], Moment=0
 			{
 				ElementLoadPlanar newLoadPlanar = new ElementLoadPlanar
 				{
@@ -144,7 +145,7 @@ namespace Test.API.Client
 				Console.WriteLine("Create planar load ID: " + idPlanarLoad.Value.ToString());
 			}
 
-			// --- ULS combination (StrGeo): 1.0 × Dead + 1.5 × Live ---
+			// --- ULS combination (StrGeo): 1.0 Ã— Dead + 1.5 Ã— Live ---
 			EID idCombo;
 			{
 				Combination combInput = new Combination();
@@ -162,6 +163,7 @@ namespace Test.API.Client
 			// --- Launch analysis ---
 			bool bCalculResult = client.LaunchAnalysis().Data;
 			Console.WriteLine("Launch calculation result: " + ((bCalculResult) ? "succeeded" : "failed"));
+			SampleReport.Check(bCalculResult, "LaunchAnalysis", "the analysis did not complete successfully");
 
 			if (bCalculResult)
 			{
@@ -171,25 +173,25 @@ namespace Test.API.Client
 				var supportIds = new List<long> { idPlanarSupport.Value };
 
 				Console.WriteLine();
-				Console.WriteLine("=== Planar support — Displacement results (ULS combination) ===");
+				Console.WriteLine("=== Planar support â€” Displacement results (ULS combination) ===");
 				var resSupportDisp = client.GetResults(ResultType.Displacement, idCombo.Value, supportIds);
 				if (resSupportDisp?.Data != null)
 					Console.WriteLine($"  Received {resSupportDisp.Data.Count} result(s)");
 
 				Console.WriteLine();
-				Console.WriteLine("=== Planar support — Forces results (ULS combination) ===");
+				Console.WriteLine("=== Planar support â€” Forces results (ULS combination) ===");
 				var resSupportForces = client.GetResults(ResultType.Forces, idCombo.Value, supportIds);
 				if (resSupportForces?.Data != null)
 					Console.WriteLine($"  Received {resSupportForces.Data.Count} result(s)");
 
 				Console.WriteLine();
-				Console.WriteLine("=== Planar support — Stresses results (ULS combination) ===");
+				Console.WriteLine("=== Planar support â€” Stresses results (ULS combination) ===");
 				var resSupportStresses = client.GetResults(ResultType.Stresses, idCombo.Value, supportIds);
 				if (resSupportStresses?.Data != null)
 					Console.WriteLine($"  Received {resSupportStresses.Data.Count} result(s)");
 
 				Console.WriteLine();
-				Console.WriteLine("=== Planar support — Resultant forces results (ULS combination) ===");
+				Console.WriteLine("=== Planar support â€” Resultant forces results (ULS combination) ===");
 				var resSupportResultant = client.GetResults(ResultType.Resultantforces, idCombo.Value, supportIds);
 				if (resSupportResultant?.Data != null)
 					Console.WriteLine($"  Received {resSupportResultant.Data.Count} result(s)");
