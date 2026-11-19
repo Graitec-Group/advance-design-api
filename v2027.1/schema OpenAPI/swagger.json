@@ -2205,7 +2205,7 @@
                   "$ref": "#/components/schemas/eModelSettingsCategory"
                 }
               ],
-              "description": "One group of general model settings - what `GetModelSettings` and\r\n`ResetModelSettings` name, and what the runtime type of a\r\n`ModelSettingsBase` object belongs to.\r\n\r\n\r\n\r\nA category is a group of settings that the desktop application edits in one dialog and\r\nthat the API therefore reads, writes and resets as one object. It is NOT the same thing\r\nas the `$type` of the settings object: the category says WHICH settings, the\r\n`$type` says which SHAPE they have - one category can have several shapes, as the\r\ncombination generation settings have one per combination standard.<p>Possible values:</p>\r\n<ul>\r\n<li><b>0 - None</b>: Not a settings group. It is the value an omitted parameter takes, so a request carrying it is refused rather than silently answered with a default group.</li>\r\n<li><b>1 - CombinationsGeneration</b>: The settings the automatic (\"simplified\") combination generation runs with - the general options the Combinations options dialog of the desktop application edits.</li>\r\n<li><b>2 - SteelEc3Calculation</b>: The general options of the Expert steel (Eurocode 3) design calculation - what the Calculation Settings dialog of the desktop application edits, tab by tab: which verifications are performed, the partial safety factors, the imperfection and buckling options, the optimisation criteria, the profile sort order, the angle-verification bolt factors and the calculation sequence.</li>\r\n<li><b>3 - SteelAiscCalculation</b>: The general options of the Expert steel design calculation of a model designed to a NORTH-AMERICAN code - AISC 360, AISC 360-16 and the four CAN/CSA S16 editions. The same Calculation Settings dialog as</li>\r\n</ul>\r\n"
+              "description": "One group of general model settings - what `GetModelSettings` and\r\n`ResetModelSettings` name, and what the runtime type of a\r\n`ModelSettingsBase` object belongs to.\r\n\r\n\r\n\r\nA category is a group of settings that the desktop application edits in one dialog and\r\nthat the API therefore reads, writes and resets as one object. It is NOT the same thing\r\nas the `$type` of the settings object: the category says WHICH settings, the\r\n`$type` says which SHAPE they have - one category can have several shapes, as the\r\ncombination generation settings have one per combination standard.<p>Possible values:</p>\r\n<ul>\r\n<li><b>0 - None</b>: Not a settings group. It is the value an omitted parameter takes, so a request carrying it is refused rather than silently answered with a default group.</li>\r\n<li><b>1 - CombinationsGeneration</b>: The settings the automatic (\"simplified\") combination generation runs with - the general options the Combinations options dialog of the desktop application edits.</li>\r\n<li><b>2 - SteelEc3Calculation</b>: The general options of the Expert steel (Eurocode 3) design calculation - what the Calculation Settings dialog of the desktop application edits, tab by tab: which verifications are performed, the partial safety factors, the imperfection and buckling options, the optimisation criteria, the profile sort order, the angle-verification bolt factors and the calculation sequence.</li>\r\n<li><b>3 - SteelAiscCalculation</b>: The general options of the Expert steel design calculation of a model designed to a NORTH-AMERICAN code - AISC 360, AISC 360-16 and the four CAN/CSA S16 editions. The same Calculation Settings dialog as</li>\r\n<li><b>4 - Tolerances</b>: The model tolerances: the minimum distance between two points, the tolerance for vertical elements and the climatic roof coplanarity tolerance (Advanced CAD properties, General page), the mesh tolerance (Mesh options) and the composite tolerance for parallel components (Composite calculation settings, Verification page). Independent of the design codes.</li>\r\n<li><b>5 - Structure</b>: The structure options of the Structure dialog: the work space - a plane (2D, XZ) structure, a grid or a 3D structure. Independent of the design codes; the 3D work space requires the 3D module of the licence.</li>\r\n</ul>\r\n"
             }
           }
         ],
@@ -2275,9 +2275,15 @@
                   },
                   {
                     "$ref": "#/components/schemas/AiscSteelCalculationSettings"
+                  },
+                  {
+                    "$ref": "#/components/schemas/StructureSettings"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ToleranceSettings"
                   }
                 ],
-                "description": "Base class of the GENERAL SETTINGS of a model: the options that apply to the model as a\r\nwhole rather than to any one object of it, and that in the AD model live on\r\n`som.ModelProperties`.\r\n\r\n\r\n\r\nThese are NOT properties of an element, a load case or a combination. They are what the\r\ndesktop application edits in its option dialogs - which project situations the combination\r\ngeneration produces, which coefficients it applies, and, as they are added, the general\r\noptions of the Expert design calculations. They are read, written and reset through THREE\r\ngeneric functions, whatever the group:\r\n\r\n- `GetModelSettings(category)` returns the settings of one group,\r\n\r\n- `SetModelSettings(settings)` writes them, and\r\n\r\n- `ResetModelSettings(category)` puts back what the model's standard prescribes.\r\n\r\n\r\n\r\nTHE OBJECT DECIDES WHAT IS WRITTEN. `SetModelSettings` takes this base class, so it is\r\nthe runtime type of the object - its `$type` - that says which group of model settings\r\nthe call writes, exactly as `CreateInformationalElement` takes\r\nAD.API.InformationalElementBase and the object decides what is created. There is no\r\nfunction per group of settings, and adding a group adds no function.\r\n\r\n\r\n\r\nTWO LEVELS OF DERIVATION. Under this base, one class per group of settings\r\n(AD.API.CombinationsGenerationSettings, AD.API.SteelCalculationSettings and\r\nAD.API.AiscSteelCalculationSettings today) - and under that class, as many classes as\r\nthe group has shapes. The combination generation has five, one per combination standard,\r\nbecause the standards share no field; each of the two steel groups has one, because the\r\ncodes inside a family share every page of the dialog. So the class hierarchy reads: what\r\nsettings (level 2), in which variant (level 3).\r\n\r\n\r\n\r\nTWO STEEL GROUPS, NOT ONE GROUP WITH TWO SHAPES. The Eurocode and the North-American\r\nfamilies do not answer the same question - the second has no Partial safety factors page at\r\nall and a Verification page of three controls instead of thirteen - so they are separate\r\ncategories with separate group classes. The five pages they do share are the same DTO\r\nclasses, held by both group classes.\r\n\r\n\r\n\r\nPARTIAL BY DESIGN. In every group, the properties are optional and what a request does not\r\ncarry keeps the value the model has, so a single switch can be changed without restating\r\nthe rest. What each group refuses, what it recomputes rather than stores, and what it\r\nreports as a warning instead of an error is documented on that group's own class."
+                "description": "Base class of the GENERAL SETTINGS of a model: the options that apply to the model as a\r\nwhole rather than to any one object of it, and that in the AD model live on\r\n`som.ModelProperties`.\r\n\r\n\r\n\r\nThese are NOT properties of an element, a load case or a combination. They are what the\r\ndesktop application edits in its option dialogs - which project situations the combination\r\ngeneration produces, which coefficients it applies, and, as they are added, the general\r\noptions of the Expert design calculations. They are read, written and reset through THREE\r\ngeneric functions, whatever the group:\r\n\r\n- `GetModelSettings(category)` returns the settings of one group,\r\n\r\n- `SetModelSettings(settings)` writes them, and\r\n\r\n- `ResetModelSettings(category)` puts back what the model's standard prescribes.\r\n\r\n\r\n\r\nTHE OBJECT DECIDES WHAT IS WRITTEN. `SetModelSettings` takes this base class, so it is\r\nthe runtime type of the object - its `$type` - that says which group of model settings\r\nthe call writes, exactly as `CreateInformationalElement` takes\r\nAD.API.InformationalElementBase and the object decides what is created. There is no\r\nfunction per group of settings, and adding a group adds no function.\r\n\r\n\r\n\r\nTWO LEVELS OF DERIVATION. Under this base, one class per group of settings\r\n(AD.API.CombinationsGenerationSettings, AD.API.SteelCalculationSettings,\r\nAD.API.AiscSteelCalculationSettings, AD.API.ToleranceSettings and AD.API.StructureSettings today) - and under that class, as many classes as\r\nthe group has shapes. The combination generation has five, one per combination standard,\r\nbecause the standards share no field; each of the two steel groups has one, because the\r\ncodes inside a family share every page of the dialog. So the class hierarchy reads: what\r\nsettings (level 2), in which variant (level 3).\r\n\r\n\r\n\r\nTWO STEEL GROUPS, NOT ONE GROUP WITH TWO SHAPES. The Eurocode and the North-American\r\nfamilies do not answer the same question - the second has no Partial safety factors page at\r\nall and a Verification page of three controls instead of thirteen - so they are separate\r\ncategories with separate group classes. The five pages they do share are the same DTO\r\nclasses, held by both group classes.\r\n\r\n\r\n\r\nPARTIAL BY DESIGN. In every group, the properties are optional and what a request does not\r\ncarry keeps the value the model has, so a single switch can be changed without restating\r\nthe rest. What each group refuses, what it recomputes rather than stores, and what it\r\nreports as a warning instead of an error is documented on that group's own class."
               }
             },
             "text/json": {
@@ -2312,9 +2318,15 @@
                   },
                   {
                     "$ref": "#/components/schemas/AiscSteelCalculationSettings"
+                  },
+                  {
+                    "$ref": "#/components/schemas/StructureSettings"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ToleranceSettings"
                   }
                 ],
-                "description": "Base class of the GENERAL SETTINGS of a model: the options that apply to the model as a\r\nwhole rather than to any one object of it, and that in the AD model live on\r\n`som.ModelProperties`.\r\n\r\n\r\n\r\nThese are NOT properties of an element, a load case or a combination. They are what the\r\ndesktop application edits in its option dialogs - which project situations the combination\r\ngeneration produces, which coefficients it applies, and, as they are added, the general\r\noptions of the Expert design calculations. They are read, written and reset through THREE\r\ngeneric functions, whatever the group:\r\n\r\n- `GetModelSettings(category)` returns the settings of one group,\r\n\r\n- `SetModelSettings(settings)` writes them, and\r\n\r\n- `ResetModelSettings(category)` puts back what the model's standard prescribes.\r\n\r\n\r\n\r\nTHE OBJECT DECIDES WHAT IS WRITTEN. `SetModelSettings` takes this base class, so it is\r\nthe runtime type of the object - its `$type` - that says which group of model settings\r\nthe call writes, exactly as `CreateInformationalElement` takes\r\nAD.API.InformationalElementBase and the object decides what is created. There is no\r\nfunction per group of settings, and adding a group adds no function.\r\n\r\n\r\n\r\nTWO LEVELS OF DERIVATION. Under this base, one class per group of settings\r\n(AD.API.CombinationsGenerationSettings, AD.API.SteelCalculationSettings and\r\nAD.API.AiscSteelCalculationSettings today) - and under that class, as many classes as\r\nthe group has shapes. The combination generation has five, one per combination standard,\r\nbecause the standards share no field; each of the two steel groups has one, because the\r\ncodes inside a family share every page of the dialog. So the class hierarchy reads: what\r\nsettings (level 2), in which variant (level 3).\r\n\r\n\r\n\r\nTWO STEEL GROUPS, NOT ONE GROUP WITH TWO SHAPES. The Eurocode and the North-American\r\nfamilies do not answer the same question - the second has no Partial safety factors page at\r\nall and a Verification page of three controls instead of thirteen - so they are separate\r\ncategories with separate group classes. The five pages they do share are the same DTO\r\nclasses, held by both group classes.\r\n\r\n\r\n\r\nPARTIAL BY DESIGN. In every group, the properties are optional and what a request does not\r\ncarry keeps the value the model has, so a single switch can be changed without restating\r\nthe rest. What each group refuses, what it recomputes rather than stores, and what it\r\nreports as a warning instead of an error is documented on that group's own class."
+                "description": "Base class of the GENERAL SETTINGS of a model: the options that apply to the model as a\r\nwhole rather than to any one object of it, and that in the AD model live on\r\n`som.ModelProperties`.\r\n\r\n\r\n\r\nThese are NOT properties of an element, a load case or a combination. They are what the\r\ndesktop application edits in its option dialogs - which project situations the combination\r\ngeneration produces, which coefficients it applies, and, as they are added, the general\r\noptions of the Expert design calculations. They are read, written and reset through THREE\r\ngeneric functions, whatever the group:\r\n\r\n- `GetModelSettings(category)` returns the settings of one group,\r\n\r\n- `SetModelSettings(settings)` writes them, and\r\n\r\n- `ResetModelSettings(category)` puts back what the model's standard prescribes.\r\n\r\n\r\n\r\nTHE OBJECT DECIDES WHAT IS WRITTEN. `SetModelSettings` takes this base class, so it is\r\nthe runtime type of the object - its `$type` - that says which group of model settings\r\nthe call writes, exactly as `CreateInformationalElement` takes\r\nAD.API.InformationalElementBase and the object decides what is created. There is no\r\nfunction per group of settings, and adding a group adds no function.\r\n\r\n\r\n\r\nTWO LEVELS OF DERIVATION. Under this base, one class per group of settings\r\n(AD.API.CombinationsGenerationSettings, AD.API.SteelCalculationSettings,\r\nAD.API.AiscSteelCalculationSettings, AD.API.ToleranceSettings and AD.API.StructureSettings today) - and under that class, as many classes as\r\nthe group has shapes. The combination generation has five, one per combination standard,\r\nbecause the standards share no field; each of the two steel groups has one, because the\r\ncodes inside a family share every page of the dialog. So the class hierarchy reads: what\r\nsettings (level 2), in which variant (level 3).\r\n\r\n\r\n\r\nTWO STEEL GROUPS, NOT ONE GROUP WITH TWO SHAPES. The Eurocode and the North-American\r\nfamilies do not answer the same question - the second has no Partial safety factors page at\r\nall and a Verification page of three controls instead of thirteen - so they are separate\r\ncategories with separate group classes. The five pages they do share are the same DTO\r\nclasses, held by both group classes.\r\n\r\n\r\n\r\nPARTIAL BY DESIGN. In every group, the properties are optional and what a request does not\r\ncarry keeps the value the model has, so a single switch can be changed without restating\r\nthe rest. What each group refuses, what it recomputes rather than stores, and what it\r\nreports as a warning instead of an error is documented on that group's own class."
               }
             },
             "application/*+json": {
@@ -2349,9 +2361,15 @@
                   },
                   {
                     "$ref": "#/components/schemas/AiscSteelCalculationSettings"
+                  },
+                  {
+                    "$ref": "#/components/schemas/StructureSettings"
+                  },
+                  {
+                    "$ref": "#/components/schemas/ToleranceSettings"
                   }
                 ],
-                "description": "Base class of the GENERAL SETTINGS of a model: the options that apply to the model as a\r\nwhole rather than to any one object of it, and that in the AD model live on\r\n`som.ModelProperties`.\r\n\r\n\r\n\r\nThese are NOT properties of an element, a load case or a combination. They are what the\r\ndesktop application edits in its option dialogs - which project situations the combination\r\ngeneration produces, which coefficients it applies, and, as they are added, the general\r\noptions of the Expert design calculations. They are read, written and reset through THREE\r\ngeneric functions, whatever the group:\r\n\r\n- `GetModelSettings(category)` returns the settings of one group,\r\n\r\n- `SetModelSettings(settings)` writes them, and\r\n\r\n- `ResetModelSettings(category)` puts back what the model's standard prescribes.\r\n\r\n\r\n\r\nTHE OBJECT DECIDES WHAT IS WRITTEN. `SetModelSettings` takes this base class, so it is\r\nthe runtime type of the object - its `$type` - that says which group of model settings\r\nthe call writes, exactly as `CreateInformationalElement` takes\r\nAD.API.InformationalElementBase and the object decides what is created. There is no\r\nfunction per group of settings, and adding a group adds no function.\r\n\r\n\r\n\r\nTWO LEVELS OF DERIVATION. Under this base, one class per group of settings\r\n(AD.API.CombinationsGenerationSettings, AD.API.SteelCalculationSettings and\r\nAD.API.AiscSteelCalculationSettings today) - and under that class, as many classes as\r\nthe group has shapes. The combination generation has five, one per combination standard,\r\nbecause the standards share no field; each of the two steel groups has one, because the\r\ncodes inside a family share every page of the dialog. So the class hierarchy reads: what\r\nsettings (level 2), in which variant (level 3).\r\n\r\n\r\n\r\nTWO STEEL GROUPS, NOT ONE GROUP WITH TWO SHAPES. The Eurocode and the North-American\r\nfamilies do not answer the same question - the second has no Partial safety factors page at\r\nall and a Verification page of three controls instead of thirteen - so they are separate\r\ncategories with separate group classes. The five pages they do share are the same DTO\r\nclasses, held by both group classes.\r\n\r\n\r\n\r\nPARTIAL BY DESIGN. In every group, the properties are optional and what a request does not\r\ncarry keeps the value the model has, so a single switch can be changed without restating\r\nthe rest. What each group refuses, what it recomputes rather than stores, and what it\r\nreports as a warning instead of an error is documented on that group's own class."
+                "description": "Base class of the GENERAL SETTINGS of a model: the options that apply to the model as a\r\nwhole rather than to any one object of it, and that in the AD model live on\r\n`som.ModelProperties`.\r\n\r\n\r\n\r\nThese are NOT properties of an element, a load case or a combination. They are what the\r\ndesktop application edits in its option dialogs - which project situations the combination\r\ngeneration produces, which coefficients it applies, and, as they are added, the general\r\noptions of the Expert design calculations. They are read, written and reset through THREE\r\ngeneric functions, whatever the group:\r\n\r\n- `GetModelSettings(category)` returns the settings of one group,\r\n\r\n- `SetModelSettings(settings)` writes them, and\r\n\r\n- `ResetModelSettings(category)` puts back what the model's standard prescribes.\r\n\r\n\r\n\r\nTHE OBJECT DECIDES WHAT IS WRITTEN. `SetModelSettings` takes this base class, so it is\r\nthe runtime type of the object - its `$type` - that says which group of model settings\r\nthe call writes, exactly as `CreateInformationalElement` takes\r\nAD.API.InformationalElementBase and the object decides what is created. There is no\r\nfunction per group of settings, and adding a group adds no function.\r\n\r\n\r\n\r\nTWO LEVELS OF DERIVATION. Under this base, one class per group of settings\r\n(AD.API.CombinationsGenerationSettings, AD.API.SteelCalculationSettings,\r\nAD.API.AiscSteelCalculationSettings, AD.API.ToleranceSettings and AD.API.StructureSettings today) - and under that class, as many classes as\r\nthe group has shapes. The combination generation has five, one per combination standard,\r\nbecause the standards share no field; each of the two steel groups has one, because the\r\ncodes inside a family share every page of the dialog. So the class hierarchy reads: what\r\nsettings (level 2), in which variant (level 3).\r\n\r\n\r\n\r\nTWO STEEL GROUPS, NOT ONE GROUP WITH TWO SHAPES. The Eurocode and the North-American\r\nfamilies do not answer the same question - the second has no Partial safety factors page at\r\nall and a Verification page of three controls instead of thirteen - so they are separate\r\ncategories with separate group classes. The five pages they do share are the same DTO\r\nclasses, held by both group classes.\r\n\r\n\r\n\r\nPARTIAL BY DESIGN. In every group, the properties are optional and what a request does not\r\ncarry keeps the value the model has, so a single switch can be changed without restating\r\nthe rest. What each group refuses, what it recomputes rather than stores, and what it\r\nreports as a warning instead of an error is documented on that group's own class."
               }
             }
           }
@@ -2398,7 +2416,7 @@
                   "$ref": "#/components/schemas/eModelSettingsCategory"
                 }
               ],
-              "description": "One group of general model settings - what `GetModelSettings` and\r\n`ResetModelSettings` name, and what the runtime type of a\r\n`ModelSettingsBase` object belongs to.\r\n\r\n\r\n\r\nA category is a group of settings that the desktop application edits in one dialog and\r\nthat the API therefore reads, writes and resets as one object. It is NOT the same thing\r\nas the `$type` of the settings object: the category says WHICH settings, the\r\n`$type` says which SHAPE they have - one category can have several shapes, as the\r\ncombination generation settings have one per combination standard.<p>Possible values:</p>\r\n<ul>\r\n<li><b>0 - None</b>: Not a settings group. It is the value an omitted parameter takes, so a request carrying it is refused rather than silently answered with a default group.</li>\r\n<li><b>1 - CombinationsGeneration</b>: The settings the automatic (\"simplified\") combination generation runs with - the general options the Combinations options dialog of the desktop application edits.</li>\r\n<li><b>2 - SteelEc3Calculation</b>: The general options of the Expert steel (Eurocode 3) design calculation - what the Calculation Settings dialog of the desktop application edits, tab by tab: which verifications are performed, the partial safety factors, the imperfection and buckling options, the optimisation criteria, the profile sort order, the angle-verification bolt factors and the calculation sequence.</li>\r\n<li><b>3 - SteelAiscCalculation</b>: The general options of the Expert steel design calculation of a model designed to a NORTH-AMERICAN code - AISC 360, AISC 360-16 and the four CAN/CSA S16 editions. The same Calculation Settings dialog as</li>\r\n</ul>\r\n"
+              "description": "One group of general model settings - what `GetModelSettings` and\r\n`ResetModelSettings` name, and what the runtime type of a\r\n`ModelSettingsBase` object belongs to.\r\n\r\n\r\n\r\nA category is a group of settings that the desktop application edits in one dialog and\r\nthat the API therefore reads, writes and resets as one object. It is NOT the same thing\r\nas the `$type` of the settings object: the category says WHICH settings, the\r\n`$type` says which SHAPE they have - one category can have several shapes, as the\r\ncombination generation settings have one per combination standard.<p>Possible values:</p>\r\n<ul>\r\n<li><b>0 - None</b>: Not a settings group. It is the value an omitted parameter takes, so a request carrying it is refused rather than silently answered with a default group.</li>\r\n<li><b>1 - CombinationsGeneration</b>: The settings the automatic (\"simplified\") combination generation runs with - the general options the Combinations options dialog of the desktop application edits.</li>\r\n<li><b>2 - SteelEc3Calculation</b>: The general options of the Expert steel (Eurocode 3) design calculation - what the Calculation Settings dialog of the desktop application edits, tab by tab: which verifications are performed, the partial safety factors, the imperfection and buckling options, the optimisation criteria, the profile sort order, the angle-verification bolt factors and the calculation sequence.</li>\r\n<li><b>3 - SteelAiscCalculation</b>: The general options of the Expert steel design calculation of a model designed to a NORTH-AMERICAN code - AISC 360, AISC 360-16 and the four CAN/CSA S16 editions. The same Calculation Settings dialog as</li>\r\n<li><b>4 - Tolerances</b>: The model tolerances: the minimum distance between two points, the tolerance for vertical elements and the climatic roof coplanarity tolerance (Advanced CAD properties, General page), the mesh tolerance (Mesh options) and the composite tolerance for parallel components (Composite calculation settings, Verification page). Independent of the design codes.</li>\r\n<li><b>5 - Structure</b>: The structure options of the Structure dialog: the work space - a plane (2D, XZ) structure, a grid or a 3D structure. Independent of the design codes; the 3D work space requires the 3D module of the licence.</li>\r\n</ul>\r\n"
             }
           }
         ],
@@ -9227,7 +9245,7 @@
                     "$ref": "#/components/schemas/SupportElasticStiffness"
                   }
                 ],
-                "description": "Stiffness associated with degrees of freedom.\r\n\r\nUnit: no unit \r\n\r\nDefault value : optional nullable object",
+                "description": "Stiffness associated with degrees of freedom, PER METRE of support length, in global axes.\r\n\r\nUnit: N/m² (translational, N/m per m), N·m/rad/m (rotational) \r\n\r\nDefault value : optional nullable object",
                 "nullable": true
               },
               "dampingRatio": {
@@ -9268,7 +9286,7 @@
                     "$ref": "#/components/schemas/SupportElasticStiffness"
                   }
                 ],
-                "description": "Stiffness associated with degrees of freedom.\r\n\r\nUnit: no unit \r\n\r\nDefault value : optional nullable object",
+                "description": "Stiffness associated with degrees of freedom, PER SQUARE METRE of support area, in global axes.\r\n\r\nUnit: N/m³ (translational, N/m per m²), N·m/rad/m² (rotational) \r\n\r\nDefault value : optional nullable object",
                 "nullable": true
               },
               "dampingRatio": {
@@ -9384,19 +9402,19 @@
               },
               "rx": {
                 "type": "number",
-                "description": "Action application point RX (degree)\r\n\r\nUnit: degree \r\n\r\nDefault value : 0.0",
+                "description": "Imposed rotation about the global X axis (rad)\r\n\r\nUnit: rad \r\n\r\nDefault value : 0.0",
                 "format": "double",
                 "default": 0
               },
               "ry": {
                 "type": "number",
-                "description": "Action application point RY (degree)\r\n\r\nUnit: degree \r\n\r\nDefault value : 0.0",
+                "description": "Imposed rotation about the global Y axis (rad)\r\n\r\nUnit: rad \r\n\r\nDefault value : 0.0",
                 "format": "double",
                 "default": 0
               },
               "rz": {
                 "type": "number",
-                "description": "Action application point RZ (degree)\r\n\r\nUnit: degree \r\n\r\nDefault value : 0.0",
+                "description": "Imposed rotation about the global Z axis (rad)\r\n\r\nUnit: rad \r\n\r\nDefault value : 0.0",
                 "format": "double",
                 "default": 0
               }
@@ -10469,7 +10487,7 @@
                     "$ref": "#/components/schemas/SupportElasticStiffness"
                   }
                 ],
-                "description": "Stiffness associated with degrees of freedom.\r\n\r\nUnit: no unit \r\n\r\nDefault value : optional nullable object",
+                "description": "Stiffness associated with degrees of freedom, PER METRE of support length, in global axes.\r\n\r\nUnit: N/m² (translational, N/m per m), N·m/rad/m (rotational) \r\n\r\nDefault value : optional nullable object",
                 "nullable": true
               },
               "dampingRatio": {
@@ -10522,7 +10540,7 @@
                     "$ref": "#/components/schemas/SupportElasticStiffness"
                   }
                 ],
-                "description": "Stiffness associated with degrees of freedom.\r\n\r\nUnit: no unit \r\n\r\nDefault value : optional nullable object",
+                "description": "Stiffness associated with degrees of freedom, PER SQUARE METRE of support area, in global axes.\r\n\r\nUnit: N/m³ (translational, N/m per m²), N·m/rad/m² (rotational) \r\n\r\nDefault value : optional nullable object",
                 "nullable": true
               },
               "dampingRatio": {
@@ -12169,7 +12187,7 @@
                 "$ref": "#/components/schemas/HaunchPosition_API"
               }
             ],
-            "description": "Haunch position\r\n\r\nDefault value: HaunchPosition_API.no_haunch",
+            "description": "Side of the section the haunch deepens (no_haunch, haut_et_bas = top and bottom, haut = top, bas = bottom). Not a position along the element: HaunchStart / HaunchEnd decide the end.\r\n\r\nDefault value: HaunchPosition_API.no_haunch",
             "default": "no_haunch"
           },
           "lengthType": {
@@ -12178,7 +12196,7 @@
                 "$ref": "#/components/schemas/HaunchLengthSizeType_API"
               }
             ],
-            "description": "Length type\r\n\r\nDefault value: HaunchLengthSizeType_API.ratio",
+            "description": "Length type: ratio (LengthRatio x element length), valeur_axe_local (LengthValue along the element) or valeur_projete (LengthValue as a projected length). valeur is not read by the analysis.\r\n\r\nDefault value: HaunchLengthSizeType_API.ratio",
             "default": "ratio"
           },
           "lengthRatio": {
@@ -12189,7 +12207,7 @@
           },
           "lengthValue": {
             "type": "number",
-            "description": "Length value\r\n\r\nUnit: m\r\n\r\nDefault value: 0.5",
+            "description": "Length value, used when LengthType is valeur_axe_local or valeur_projete\r\n\r\nUnit: m\r\n\r\nDefault value: 0.5",
             "format": "double",
             "default": 0.5
           },
@@ -12217,7 +12235,7 @@
                 "$ref": "#/components/schemas/HaunchLengthSizeType_API"
               }
             ],
-            "description": "Height type\r\n\r\nDefault value: HaunchLengthSizeType_API.ratio",
+            "description": "Height type: ratio (HeightRatio x depth of the element section) or valeur_axe_local (HeightValue). The other values are not read by the analysis.\r\n\r\nDefault value: HaunchLengthSizeType_API.ratio",
             "default": "ratio"
           },
           "heightRatio": {
@@ -12228,7 +12246,7 @@
           },
           "heightValue": {
             "type": "number",
-            "description": "Height value\r\n\r\nUnit: m\r\n\r\nDefault value: 0.2",
+            "description": "Height value, used when HeightType is valeur_axe_local\r\n\r\nUnit: m\r\n\r\nDefault value: 0.2",
             "format": "double",
             "default": 0.2
           }
@@ -13940,7 +13958,7 @@
         "properties": {
           "loadCaseActionType": {
             "type": "integer",
-            "description": "/// Load case action type (Base,leading(0)/Accompanying(1)/Base,leading or Accompanying(2)) or (Favorable(0)/Unfavorable(1)/Favorable or Unfavorable(2) ) \r\n\r\nUnit : - \r\n\r\nDefault value : eADActionTypeBaseAndAcco (2)",
+            "description": "/// Load case action type (Base,leading(0)/Accompanying(1)/Base,leading or Accompanying(2)) or (Favorable(0)/Unfavorable(1)/Favorable or Unfavorable(2) ) \r\n\r\nUnit : - \r\n\r\n2nd generation Eurocode, dead loads only (permanent water included): Fav (VC1) and Stab (VC2) (3) / Fav (VC1) and Stab (VC2) or Unfav (4) - stored as 0 / 2 on another load or under another standard \r\n\r\nDefault value : eADActionTypeBaseAndAcco (2)",
             "format": "int32",
             "default": 2
           },
@@ -14206,7 +14224,7 @@
           },
           "loadCaseActionType": {
             "type": "integer",
-            "description": "Load case action type (Base,leading(0)/Accompanying(1)/Base,leading or Accompanying(2)) or (Favorable(0)/Unfavorable(1)/Favorable or Unfavorable(2) ) \r\n\r\nUnit : - \r\n\r\nDefault value : eADActionTypeBaseAndAcco (2)",
+            "description": "Load case action type (Base,leading(0)/Accompanying(1)/Base,leading or Accompanying(2)) or (Favorable(0)/Unfavorable(1)/Favorable or Unfavorable(2) ) \r\n\r\nUnit : - \r\n\r\n2nd generation Eurocode, dead loads only (permanent water included): Fav (VC1) and Stab (VC2) (3) / Fav (VC1) and Stab (VC2) or Unfav (4) - stored as 0 / 2 on another load or under another standard \r\n\r\nDefault value : eADActionTypeBaseAndAcco (2)",
             "format": "int32",
             "default": 2
           },
@@ -16654,7 +16672,7 @@
           }
         },
         "additionalProperties": false,
-        "description": "Base class of the GENERAL SETTINGS of a model: the options that apply to the model as a\r\nwhole rather than to any one object of it, and that in the AD model live on\r\n`som.ModelProperties`.\r\n\r\n\r\n\r\nThese are NOT properties of an element, a load case or a combination. They are what the\r\ndesktop application edits in its option dialogs - which project situations the combination\r\ngeneration produces, which coefficients it applies, and, as they are added, the general\r\noptions of the Expert design calculations. They are read, written and reset through THREE\r\ngeneric functions, whatever the group:\r\n\r\n- `GetModelSettings(category)` returns the settings of one group,\r\n\r\n- `SetModelSettings(settings)` writes them, and\r\n\r\n- `ResetModelSettings(category)` puts back what the model's standard prescribes.\r\n\r\n\r\n\r\nTHE OBJECT DECIDES WHAT IS WRITTEN. `SetModelSettings` takes this base class, so it is\r\nthe runtime type of the object - its `$type` - that says which group of model settings\r\nthe call writes, exactly as `CreateInformationalElement` takes\r\nAD.API.InformationalElementBase and the object decides what is created. There is no\r\nfunction per group of settings, and adding a group adds no function.\r\n\r\n\r\n\r\nTWO LEVELS OF DERIVATION. Under this base, one class per group of settings\r\n(AD.API.CombinationsGenerationSettings, AD.API.SteelCalculationSettings and\r\nAD.API.AiscSteelCalculationSettings today) - and under that class, as many classes as\r\nthe group has shapes. The combination generation has five, one per combination standard,\r\nbecause the standards share no field; each of the two steel groups has one, because the\r\ncodes inside a family share every page of the dialog. So the class hierarchy reads: what\r\nsettings (level 2), in which variant (level 3).\r\n\r\n\r\n\r\nTWO STEEL GROUPS, NOT ONE GROUP WITH TWO SHAPES. The Eurocode and the North-American\r\nfamilies do not answer the same question - the second has no Partial safety factors page at\r\nall and a Verification page of three controls instead of thirteen - so they are separate\r\ncategories with separate group classes. The five pages they do share are the same DTO\r\nclasses, held by both group classes.\r\n\r\n\r\n\r\nPARTIAL BY DESIGN. In every group, the properties are optional and what a request does not\r\ncarry keeps the value the model has, so a single switch can be changed without restating\r\nthe rest. What each group refuses, what it recomputes rather than stores, and what it\r\nreports as a warning instead of an error is documented on that group's own class.",
+        "description": "Base class of the GENERAL SETTINGS of a model: the options that apply to the model as a\r\nwhole rather than to any one object of it, and that in the AD model live on\r\n`som.ModelProperties`.\r\n\r\n\r\n\r\nThese are NOT properties of an element, a load case or a combination. They are what the\r\ndesktop application edits in its option dialogs - which project situations the combination\r\ngeneration produces, which coefficients it applies, and, as they are added, the general\r\noptions of the Expert design calculations. They are read, written and reset through THREE\r\ngeneric functions, whatever the group:\r\n\r\n- `GetModelSettings(category)` returns the settings of one group,\r\n\r\n- `SetModelSettings(settings)` writes them, and\r\n\r\n- `ResetModelSettings(category)` puts back what the model's standard prescribes.\r\n\r\n\r\n\r\nTHE OBJECT DECIDES WHAT IS WRITTEN. `SetModelSettings` takes this base class, so it is\r\nthe runtime type of the object - its `$type` - that says which group of model settings\r\nthe call writes, exactly as `CreateInformationalElement` takes\r\nAD.API.InformationalElementBase and the object decides what is created. There is no\r\nfunction per group of settings, and adding a group adds no function.\r\n\r\n\r\n\r\nTWO LEVELS OF DERIVATION. Under this base, one class per group of settings\r\n(AD.API.CombinationsGenerationSettings, AD.API.SteelCalculationSettings,\r\nAD.API.AiscSteelCalculationSettings, AD.API.ToleranceSettings and AD.API.StructureSettings today) - and under that class, as many classes as\r\nthe group has shapes. The combination generation has five, one per combination standard,\r\nbecause the standards share no field; each of the two steel groups has one, because the\r\ncodes inside a family share every page of the dialog. So the class hierarchy reads: what\r\nsettings (level 2), in which variant (level 3).\r\n\r\n\r\n\r\nTWO STEEL GROUPS, NOT ONE GROUP WITH TWO SHAPES. The Eurocode and the North-American\r\nfamilies do not answer the same question - the second has no Partial safety factors page at\r\nall and a Verification page of three controls instead of thirteen - so they are separate\r\ncategories with separate group classes. The five pages they do share are the same DTO\r\nclasses, held by both group classes.\r\n\r\n\r\n\r\nPARTIAL BY DESIGN. In every group, the properties are optional and what a request does not\r\ncarry keeps the value the model has, so a single switch can be changed without restating\r\nthe rest. What each group refuses, what it recomputes rather than stores, and what it\r\nreports as a warning instead of an error is documented on that group's own class.",
         "discriminator": {
           "propertyName": "$type",
           "mapping": {
@@ -16667,7 +16685,9 @@
             "GreenhouseCombinationsGenerationSettings": "#/components/schemas/GreenhouseCombinationsGenerationSettings",
             "SteelCalculationSettings": "#/components/schemas/SteelCalculationSettings",
             "Ec3SteelCalculationSettings": "#/components/schemas/Ec3SteelCalculationSettings",
-            "AiscSteelCalculationSettings": "#/components/schemas/AiscSteelCalculationSettings"
+            "AiscSteelCalculationSettings": "#/components/schemas/AiscSteelCalculationSettings",
+            "StructureSettings": "#/components/schemas/StructureSettings",
+            "ToleranceSettings": "#/components/schemas/ToleranceSettings"
           }
         }
       },
@@ -16705,6 +16725,12 @@
               },
               {
                 "$ref": "#/components/schemas/AiscSteelCalculationSettings"
+              },
+              {
+                "$ref": "#/components/schemas/StructureSettings"
+              },
+              {
+                "$ref": "#/components/schemas/ToleranceSettings"
               }
             ],
             "description": "The result payload of the operation.\r\nMay be `null` or default when AD.API.Srv.Models.ApiResponseDetails.Success is `false`.",
@@ -27267,30 +27293,30 @@
                 "$ref": "#/components/schemas/SectionOffsetOption_API"
               }
             ],
-            "description": "Offset option, Options available for defining the eccentricity of a cross-section in relation to its local axis.  With predefined eccentricity types, z and y denote an eccentricity of half the section size.\r\n\r\nDefault value: SectionOffsetOption_API.center_alignment",
+            "description": "Offset option: how the section is offset from the element axis. center_alignment = no offset; the other predefined options place an edge of the section on the axis, the offset being computed from the section (DeltaY1/DeltaZ1/DeltaY2/DeltaZ2 are then ignored); autre = the user offset given by DeltaY1/DeltaZ1/DeltaY2/DeltaZ2. The analysis takes the offset into account only when ConsideredInFEM is true.\r\n\r\nDefault value: SectionOffsetOption_API.center_alignment",
             "default": "center_alignment"
           },
           "deltaY1": {
             "type": "number",
-            "description": "Delta Y at start\r\n\r\nUnit: m\r\n\r\nDefault value: 0.0",
+            "description": "Offset along the local y axis at the start (GeomPtStart), used only when Option is autre\r\n\r\nUnit: m\r\n\r\nDefault value: 0.0",
             "format": "double",
             "default": 0
           },
           "deltaZ1": {
             "type": "number",
-            "description": "Delta Z at start\r\n\r\nUnit: m\r\n\r\nDefault value: 0.0",
+            "description": "Offset along the local z axis at the start (GeomPtStart), used only when Option is autre\r\n\r\nUnit: m\r\n\r\nDefault value: 0.0",
             "format": "double",
             "default": 0
           },
           "deltaY2": {
             "type": "number",
-            "description": "Delta Y at end\r\n\r\nUnit: m\r\n\r\nDefault value: 0.0",
+            "description": "Offset along the local y axis at the end (GeomPtEnd), used only when Option is autre\r\n\r\nUnit: m\r\n\r\nDefault value: 0.0",
             "format": "double",
             "default": 0
           },
           "deltaZ2": {
             "type": "number",
-            "description": "Delta Z at end\r\n\r\nUnit: m\r\n\r\nDefault value: 0.0",
+            "description": "Offset along the local z axis at the end (GeomPtEnd), used only when Option is autre\r\n\r\nUnit: m\r\n\r\nDefault value: 0.0",
             "format": "double",
             "default": 0
           },
@@ -29763,6 +29789,40 @@
         "additionalProperties": false,
         "description": "Structure parameters for IBC seismic load case family"
       },
+      "StructureSettings": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ModelSettingsBase"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "workspace": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/eStructureWorkspace"
+                  }
+                ],
+                "description": "The work space of the structure: `planeWorkspace` (2D, global XZ plane: TX, TZ, RY),\r\n`gridWorkspace` (global XY plane loaded along Z: TZ, RX, RY) or `spaceWorkspace` (3D).\r\n\"Plane / Grid / 3D\" of the Structure dialog.\r\n\r\n`spaceWorkspace` is refused when the 3D module is not licensed - the dialog\r\ndisables it. Default: `spaceWorkspace` (`planeWorkspace` without the 3D module).",
+                "nullable": true
+              },
+              "bendingStiffStructure": {
+                "type": "boolean",
+                "description": "The bending stiffness of the structure - \"Bending stiff / Truss\" of the Structure dialog:\r\n`true` for a structure rigid in bending (frames), `false` for a truss. The FE analysis\r\nand the steel / concrete design read it from the analysis model. Default: `true`.",
+                "nullable": true
+              },
+              "referenceTemperature": {
+                "type": "number",
+                "description": "The reference temperature of the structure, in degrees Celsius - \"Reference temperature\" of the\r\nStructure dialog: the temperature at which the structure has no thermal strain, from which the\r\nFE analysis measures the uniform temperature of the thermal loads. Any finite value; NaN and\r\nInfinity are refused. Default: 0.",
+                "format": "double",
+                "nullable": true
+              }
+            },
+            "additionalProperties": false
+          }
+        ],
+        "description": "The STRUCTURE options of the model - what the Structure dialog of the desktop application edits\r\n(Model properties, Structure): the work space of the structure, its bending stiffness and the reference\r\ntemperature of the thermal loads.\r\n\r\n\r\n\r\nONE GROUP OF MODEL SETTINGS. This class is the `Structure` group of\r\nAD.API.ModelSettingsBase: read it with `GetModelSettings(eModelSettingsCategory.Structure)`,\r\nwrite it with `SetModelSettings`, and put back the Advance Design default with\r\n`ResetModelSettings(eModelSettingsCategory.Structure)` - the values a new model carries: a 3D\r\nstructure (a plane structure when the 3D module is not licensed), rigid in bending, with a reference\r\ntemperature of 0 degrees Celsius. It does not depend on any design code.\r\n\r\n\r\n\r\nPARTIAL. On a Set, a property left null keeps the value the model has. A Get fills every property.\r\n\r\n\r\n\r\nWHAT A SET DOES BESIDES THE WORK SPACE - what the desktop dialog does when it is closed with OK:\r\n\r\n- the default view of the model follows the work space (front view for a plane structure,\r\ntop view for a grid, perspective view for a structure that becomes 3D; a structure that already is\r\n3D keeps its view);\r\n\r\n- for a plane or grid structure, the imposed displacements template is reset to the degrees of\r\nfreedom of the work space (Bug #174424);\r\n\r\n- the analysis models that are open take the new values at once; the others take them the\r\nnext time they are built - `LaunchAnalysis` always rebuilds the analysis model.\r\n\r\n\r\n\r\nWHEN TO CALL IT. Right after `NewProject`, before creating the model: in a plane structure the\r\nout-of-plane degrees of freedom do not exist, which is what a 2D frame or truss modelled in the XZ\r\nplane needs - in 3D, such a model is a mechanism out of its plane and its analysis fails."
+      },
       "StructureTypeIBC": {
         "type": "object",
         "properties": {
@@ -29859,43 +29919,43 @@
         "properties": {
           "ktx": {
             "type": "number",
-            "description": "Translational stiffness along X [N/m].\r\n\r\nUnit: N/m \r\n\r\nDefault value : 0.0",
+            "description": "Translational stiffness along X [N/m].\r\n\r\nUnit: N/m on a punctual support, N/m² (per metre) on a linear support, N/m³ (per m²) on a planar support \r\n\r\nDefault value : 0.0",
             "format": "double",
             "default": 0
           },
           "kty": {
             "type": "number",
-            "description": "Translational stiffness along Y [N/m].\r\n\r\nUnit: N/m \r\n\r\nDefault value : 0.0",
+            "description": "Translational stiffness along Y [N/m].\r\n\r\nUnit: N/m on a punctual support, N/m² (per metre) on a linear support, N/m³ (per m²) on a planar support \r\n\r\nDefault value : 0.0",
             "format": "double",
             "default": 0
           },
           "ktz": {
             "type": "number",
-            "description": "Translational stiffness along Z [N/m].\r\n\r\nUnit: N/m \r\n\r\nDefault value : 0.0",
+            "description": "Translational stiffness along Z [N/m].\r\n\r\nUnit: N/m on a punctual support, N/m² (per metre) on a linear support, N/m³ (per m²) on a planar support \r\n\r\nDefault value : 0.0",
             "format": "double",
             "default": 0
           },
           "krx": {
             "type": "number",
-            "description": "Rotational stiffness about X [N·m/rad].\r\n\r\nUnit: N·m/rad \r\n\r\nDefault value : 0.0",
+            "description": "Rotational stiffness about X [N·m/rad].\r\n\r\nUnit: N·m/rad on a punctual support, N·m/rad per metre on a linear support, N·m/rad per m² on a planar support \r\n\r\nDefault value : 0.0",
             "format": "double",
             "default": 0
           },
           "kry": {
             "type": "number",
-            "description": "Rotational stiffness about Y [N·m/rad].\r\n\r\nUnit: N·m/rad \r\n\r\nDefault value : 0.0",
+            "description": "Rotational stiffness about Y [N·m/rad].\r\n\r\nUnit: N·m/rad on a punctual support, N·m/rad per metre on a linear support, N·m/rad per m² on a planar support \r\n\r\nDefault value : 0.0",
             "format": "double",
             "default": 0
           },
           "krz": {
             "type": "number",
-            "description": "Rotational stiffness about Z [N·m/rad].\r\n\r\nUnit: N·m/rad \r\n\r\nDefault value : 0.0",
+            "description": "Rotational stiffness about Z [N·m/rad].\r\n\r\nUnit: N·m/rad on a punctual support, N·m/rad per metre on a linear support, N·m/rad per m² on a planar support \r\n\r\nDefault value : 0.0",
             "format": "double",
             "default": 0
           }
         },
         "additionalProperties": false,
-        "description": "Stiffness associated with degrees of freedom.\r\n\r\nTranslational: [N/m], Rotational: [N·m/rad]."
+        "description": "Stiffness associated with degrees of freedom, in global axes.\r\n\r\nThe unit depends on the support that carries it: on a punctual support a translational stiffness is in N/m and a\r\nrotational one in N·m/rad; on a linear support both are PER METRE of support length (N/m², N·m/rad/m); on a planar\r\nsupport both are PER SQUARE METRE of support area (N/m³, N·m/rad/m²).\r\n\r\nExample: a linear support with KTZ = 1e6 under a 10 kN/m load, or a planar support with KTZ = 1e6 under a 10 kPa\r\nload, settles 0.01 m."
       },
       "SupportStresses": {
         "type": "object",
@@ -30205,6 +30265,50 @@
         ],
         "type": "string",
         "description": "National annex of Eurocode 5. Mirrors `REG_TIMBER_CODE_EUROCODE_*`.\r\n\r\n\r\n\r\nAccepted only together with AD.API.TimberDesignCode`eurocode`, and never with\r\nthe value `italy`.<p>Possible values:</p>\r\n<ul>\r\n<li><b>0 - france</b>: France.</li>\r\n<li><b>1 - uk</b>: United Kingdom. Macro</li>\r\n<li><b>2 - germany</b>: Germany.</li>\r\n<li><b>3 - romania</b>: Romania.</li>\r\n<li><b>4 - general</b>: The general Eurocode annex - no national deviations. Macro</li>\r\n<li><b>5 - czech</b>: Czech Republic.</li>\r\n<li><b>6 - italy</b>: Italy. NOT writable: Italy is a timber standard here, not an annex.</li>\r\n<li><b>7 - poland</b>: Poland.</li>\r\n<li><b>8 - slovakia</b>: Slovakia.</li>\r\n<li><b>9 - spain</b>: Spain.</li>\r\n<li><b>10 - portugal</b>: Portugal.</li>\r\n</ul>\r\n"
+      },
+      "ToleranceSettings": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ModelSettingsBase"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "cadDistanceTolerance": {
+                "type": "number",
+                "description": "The minimum distance between two points, in m: two points closer than this are the same\r\npoint. \"Minimum distance between 2 points\" of the Advanced CAD properties.\r\n\r\nRange: 1e-12 to 0.05. Default: 1e-8.\r\n\r\nApplies to the whole server process.",
+                "format": "double",
+                "nullable": true
+              },
+              "verticalAngularTolerance": {
+                "type": "number",
+                "description": "The tolerance for vertical elements, in rad: a linear element whose axis is within this\r\nangle of the global Z axis is vertical - a column, with its local z along global X - rather\r\nthan a beam. \"Tolerance for vertical elements\" of the Advanced CAD properties.\r\n\r\nRange: greater than 0.01, up to pi/6 (0.5235988). Default: pi/60 (3 deg, 0.0523599).\r\n\r\nThe lower bound is EXCLUSIVE although the dialog accepts 0.01: the desktop replaces any\r\nstored value of 0.01 or less by 3 deg the next time the model is opened.\r\n\r\nApplies to the whole server process.",
+                "format": "double",
+                "nullable": true
+              },
+              "climaticRoofAngularTolerance": {
+                "type": "number",
+                "description": "The angular tolerance for the coplanarity of roof planes in the climatic (wind) load\r\ngeneration, in rad. \"Climatic wind roof angular tolerance for coplanarity\" of the Advanced\r\nCAD properties.\r\n\r\nRange: 0 to 5 deg (0.0872665). Default: pi/60 (3 deg, 0.0523599).",
+                "format": "double",
+                "nullable": true
+              },
+              "meshTolerance": {
+                "type": "number",
+                "description": "The mesh tolerance, in m: the distance tolerance the mesh, the finite element solve and the\r\nverifications run with. \"Mesh tolerance\" of the Mesh options.\r\n\r\nRange: 1e-12 to 0.05. Default: 1e-3.",
+                "format": "double",
+                "nullable": true
+              },
+              "parallelComponentsTolerance": {
+                "type": "number",
+                "description": "The tolerance for parallel components of the composite design, in rad: the angle under\r\nwhich a beam or a floor deck is considered parallel to a composite beam. \"Tolerance for\r\nparallel components\" of the Composite calculation settings, Verification page.\r\n\r\nRange: 0 to 50 deg (0.8726646). Default: 10 deg (0.1745329).",
+                "format": "double",
+                "nullable": true
+              }
+            },
+            "additionalProperties": false
+          }
+        ],
+        "description": "The model TOLERANCES - the geometric tolerances the desktop application lets the user set:\r\nthe minimum distance between two points, the tolerance for vertical elements and the climatic\r\nroof coplanarity tolerance (Advanced CAD properties, General page), the mesh tolerance (Mesh\r\noptions) and the composite tolerance for parallel components (Composite calculation settings,\r\nVerification page).\r\n\r\n\r\n\r\nONE GROUP OF MODEL SETTINGS. This class is the `Tolerances` group of\r\nAD.API.ModelSettingsBase: read it with `GetModelSettings(eModelSettingsCategory.Tolerances)`,\r\nwrite it with `SetModelSettings`, and put back the Advance Design defaults with\r\n`ResetModelSettings(eModelSettingsCategory.Tolerances)` - the very values a new model\r\ncarries. It does not depend on any design code.\r\n\r\n\r\n\r\nUNITS. SI throughout: distances in metres, angles in RADIANS.\r\n\r\n\r\n\r\nPARTIAL. On a Set, a property left null keeps the value the model has. A Get fills every\r\nproperty. One value that is not finite or is outside its range refuses the whole call, the\r\nproperty is named in the error, and nothing is written. The ranges are the dialogs' own.\r\n\r\n\r\n\r\nTWO OF THEM APPLY TO THE WHOLE SERVER PROCESS. `CadDistanceTolerance` and\r\n`VerticalAngularTolerance` are, besides model values, the tolerances every geometric\r\noperation of the session runs with: when two points are the same point, when a linear element\r\nis vertical (which decides its default local axes). As in the desktop application, the session\r\ntakes them from the model when `NewProject` or `OpenProject` opens it, and\r\n`SetModelSettings` / `ResetModelSettings` of this group change them at once. They\r\napply to the whole server process, which holds one project at a time. The other three are read\r\nfrom the model by the operations that use them (the climatic generation, the mesh / solve /\r\nverification, the composite design) and need nothing more.\r\n\r\n\r\n\r\nWHEN TO CALL IT. Before creating the geometry the tolerances should govern, and before\r\n`LaunchAnalysis`. The values are written to the descriptive model and to the analysis\r\nmodels that are open; an analysis model that is not open receives them from the descriptive\r\nmodel the next time it is built."
       },
       "TopographicCategoryNTC_API": {
         "enum": [
@@ -30937,10 +31041,12 @@
           "None",
           "CombinationsGeneration",
           "SteelEc3Calculation",
-          "SteelAiscCalculation"
+          "SteelAiscCalculation",
+          "Tolerances",
+          "Structure"
         ],
         "type": "string",
-        "description": "One group of general model settings - what `GetModelSettings` and\r\n`ResetModelSettings` name, and what the runtime type of a\r\n`ModelSettingsBase` object belongs to.\r\n\r\n\r\n\r\nA category is a group of settings that the desktop application edits in one dialog and\r\nthat the API therefore reads, writes and resets as one object. It is NOT the same thing\r\nas the `$type` of the settings object: the category says WHICH settings, the\r\n`$type` says which SHAPE they have - one category can have several shapes, as the\r\ncombination generation settings have one per combination standard.<p>Possible values:</p>\r\n<ul>\r\n<li><b>0 - None</b>: Not a settings group. It is the value an omitted parameter takes, so a request carrying it is refused rather than silently answered with a default group.</li>\r\n<li><b>1 - CombinationsGeneration</b>: The settings the automatic (\"simplified\") combination generation runs with - the general options the Combinations options dialog of the desktop application edits.</li>\r\n<li><b>2 - SteelEc3Calculation</b>: The general options of the Expert steel (Eurocode 3) design calculation - what the Calculation Settings dialog of the desktop application edits, tab by tab: which verifications are performed, the partial safety factors, the imperfection and buckling options, the optimisation criteria, the profile sort order, the angle-verification bolt factors and the calculation sequence.</li>\r\n<li><b>3 - SteelAiscCalculation</b>: The general options of the Expert steel design calculation of a model designed to a NORTH-AMERICAN code - AISC 360, AISC 360-16 and the four CAN/CSA S16 editions. The same Calculation Settings dialog as</li>\r\n</ul>\r\n"
+        "description": "One group of general model settings - what `GetModelSettings` and\r\n`ResetModelSettings` name, and what the runtime type of a\r\n`ModelSettingsBase` object belongs to.\r\n\r\n\r\n\r\nA category is a group of settings that the desktop application edits in one dialog and\r\nthat the API therefore reads, writes and resets as one object. It is NOT the same thing\r\nas the `$type` of the settings object: the category says WHICH settings, the\r\n`$type` says which SHAPE they have - one category can have several shapes, as the\r\ncombination generation settings have one per combination standard.<p>Possible values:</p>\r\n<ul>\r\n<li><b>0 - None</b>: Not a settings group. It is the value an omitted parameter takes, so a request carrying it is refused rather than silently answered with a default group.</li>\r\n<li><b>1 - CombinationsGeneration</b>: The settings the automatic (\"simplified\") combination generation runs with - the general options the Combinations options dialog of the desktop application edits.</li>\r\n<li><b>2 - SteelEc3Calculation</b>: The general options of the Expert steel (Eurocode 3) design calculation - what the Calculation Settings dialog of the desktop application edits, tab by tab: which verifications are performed, the partial safety factors, the imperfection and buckling options, the optimisation criteria, the profile sort order, the angle-verification bolt factors and the calculation sequence.</li>\r\n<li><b>3 - SteelAiscCalculation</b>: The general options of the Expert steel design calculation of a model designed to a NORTH-AMERICAN code - AISC 360, AISC 360-16 and the four CAN/CSA S16 editions. The same Calculation Settings dialog as</li>\r\n<li><b>4 - Tolerances</b>: The model tolerances: the minimum distance between two points, the tolerance for vertical elements and the climatic roof coplanarity tolerance (Advanced CAD properties, General page), the mesh tolerance (Mesh options) and the composite tolerance for parallel components (Composite calculation settings, Verification page). Independent of the design codes.</li>\r\n<li><b>5 - Structure</b>: The structure options of the Structure dialog: the work space - a plane (2D, XZ) structure, a grid or a 3D structure. Independent of the design codes; the 3D work space requires the 3D module of the licence.</li>\r\n</ul>\r\n"
       },
       "ePermanentLoadSituation": {
         "enum": [
@@ -31076,6 +31182,15 @@
         ],
         "type": "string",
         "description": "Whether the partial safety factors are taken from the design code or imposed by the user.\r\nShared with the native `enumSafetyFactorsOption`; the model field is\r\n`SteelSafetyFactorsOption`.<p>Possible values:</p>\r\n<ul>\r\n<li><b>0 - eSafetyFactorsAuto</b>: The design code and its national annex decide. The default. The gamma values then become READ ONLY: a value sent for one of them is dropped and reported as a warning.</li>\r\n<li><b>1 - eSafetyFactorsImposed</b>: The gamma values of the request are stored as sent.</li>\r\n</ul>\r\n"
+      },
+      "eStructureWorkspace": {
+        "enum": [
+          "planeWorkspace",
+          "gridWorkspace",
+          "spaceWorkspace"
+        ],
+        "type": "string",
+        "description": "The work space of the structure - \"Plane / Grid / 3D\" of the Structure dialog\r\n(eModelSettingsCategory::Structure). The FE model has the degrees of freedom of its work space\r\nonly: a plane structure is a 2D model in the global XZ plane.<p>Possible values:</p>\r\n<ul>\r\n<li><b>0 - planeWorkspace</b>: Plane structure: a 2D model in the global XZ plane - the out-of-plane degrees of freedom (TY, RX, RZ) do not exist.</li>\r\n<li><b>1 - gridWorkspace</b>: Grid structure: a 2D model in the global XY plane, loaded along Z - only TZ, RX and RY exist.</li>\r\n<li><b>2 - spaceWorkspace</b>: 3D structure: all six degrees of freedom. Requires the 3D module of the licence.</li>\r\n</ul>\r\n"
       },
       "eThermalLoadCategory": {
         "enum": [
